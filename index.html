@@ -1,0 +1,1496 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Painel de desempenho · Técnicas para Concursos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --font-anthropic-sans:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-anthropic-serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --color-bg:#f6f7fb;--color-panel:#ffffff;--color-fg:#141826;--color-fg-muted:#636a7e;--color-border-line:#e4e7ef;
+  --color-ok:#14945f;--color-warn:#b7791f;--color-bad:#d1383d;
+  --cds-font-size-caption:.8125rem;--cds-font-size-body:.9375rem;--cds-font-size-heading:1.0625rem;--cds-font-size-title:1.75rem;--cds-font-weight-medium:600;
+  --cds-gap-xs:.25rem;--cds-gap-sm:.5rem;--cds-gap-md:1rem;--cds-gap-lg:1.5rem;--cds-gap-xl:2rem;
+  --cds-pad-xs:.25rem;--cds-pad-sm:.5rem;--cds-pad-md:.75rem;--cds-pad-lg:1.25rem;--cds-pad-xl:1.75rem;
+  --cds-radius:10px;--cds-border:#e4e7ef;--cds-surface-popover:#ffffff;--cds-shadow-popover:0 8px 28px rgba(20,24,38,.14);--cds-text-secondary:#636a7e;
+  --cds-chart-grid:#eceef4;--cds-chart-axis:#cfd3de;--cds-chart-muted:#c9cedb;--cds-dur-slow:.45s;--cds-ease-out:cubic-bezier(.2,.8,.2,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --color-bg:#0b0d14;--color-panel:#131624;--color-fg:#eceef6;--color-fg-muted:#9aa1b8;--color-border-line:#242a3d;
+  --color-ok:#3ddc97;--color-warn:#f4c15d;--color-bad:#ff6b6b;
+  --cds-border:#2a3046;--cds-surface-popover:#1a1e30;--cds-shadow-popover:0 10px 30px rgba(0,0,0,.5);--cds-text-secondary:#9aa1b8;
+  --cds-chart-grid:#1f2436;--cds-chart-axis:#343b55;--cds-chart-muted:#3a4160;color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans);-webkit-font-smoothing:antialiased}
+#dash-root{padding:clamp(16px,3vw,40px) clamp(16px,3vw,40px) 48px}
+.dash-skeleton{position:relative;color:transparent!important;background:linear-gradient(90deg,var(--color-border-line) 0%,color-mix(in srgb,var(--color-border-line) 40%,transparent) 50%,var(--color-border-line) 100%);background-size:200% 100%;border-radius:var(--cds-radius);animation:dash-sk 1.4s ease-in-out infinite}
+@keyframes dash-sk{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.dash-login{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(120% 120% at 0% 0%,color-mix(in srgb,#7c6cf6 22%,transparent),transparent 60%),radial-gradient(90% 120% at 100% 100%,color-mix(in srgb,#22c3a6 16%,transparent),transparent 55%),var(--color-bg)}
+.dash-login[hidden]{display:none}
+.dash-login form{width:min(100%,24rem);background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--cds-shadow-popover)}
+.dash-login h1{margin:0;font-family:var(--font-anthropic-serif);font-weight:400;font-size:1.6rem}
+.dash-login p{margin:0;color:var(--color-fg-muted);font-size:.9rem}
+.dash-login input{font:inherit;padding:12px 14px;border-radius:10px;border:1px solid var(--color-border-line);background:var(--color-bg);color:var(--color-fg)}
+.dash-login button{font:inherit;font-weight:600;padding:12px;border:0;border-radius:10px;color:#fff;cursor:pointer;background:linear-gradient(135deg,#7c6cf6,#22c3a6)}
+.dash-login .err{color:var(--color-bad);font-size:.85rem;min-height:1.2em}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="/runtime.js"></script>
+</head>
+<body>
+<div class="dash-login" id="dash-login" hidden>
+  <form id="dash-login-form">
+    <h1>Painel de desempenho</h1>
+    <p>Técnicas para Concursos · acesso restrito</p>
+    <input type="password" name="senha" placeholder="Senha" autocomplete="current-password" required aria-label="Senha">
+    <button type="submit">Entrar</button>
+    <span class="err" id="dash-login-err"></span>
+  </form>
+</div>
+<div id="dash-root">
+<style>
+.tp{font-family:var(--font-anthropic-sans);color:var(--color-fg);display:flex;flex-direction:column;gap:var(--cds-gap-lg);max-width:84rem;margin-inline:auto}
+.tp *{box-sizing:border-box}
+.tp-eyebrow{margin:0;font-size:var(--cds-font-size-caption);text-transform:uppercase;letter-spacing:.08em;color:var(--color-fg-muted);font-weight:var(--cds-font-weight-medium)}
+.tp-hero{position:relative;overflow:hidden;border:1px solid var(--color-border-line);border-radius:calc(var(--cds-radius) * 2);padding:var(--cds-pad-xl);
+  background:radial-gradient(120% 160% at 0% 0%,color-mix(in srgb,var(--tp-a0,#888) 20%,transparent),transparent 60%),radial-gradient(90% 140% at 100% 100%,color-mix(in srgb,var(--tp-a1,#888) 14%,transparent),transparent 55%),var(--color-panel);
+  display:flex;flex-direction:column;gap:var(--cds-gap-md)}
+.tp-hero-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--cds-gap-md);align-items:flex-start}
+.tp-title{font-family:var(--font-anthropic-serif);font-weight:400;font-size:calc(var(--cds-font-size-title) * 1.35);line-height:1.1;margin:var(--cds-gap-xs) 0 0}
+.tp-acct{margin:var(--cds-gap-xs) 0 0;color:var(--color-fg-muted);font-size:var(--cds-font-size-body)}
+.tp-lede{margin:0;font-size:var(--cds-font-size-heading);line-height:1.5;max-width:52rem}
+.tp-lede b{font-family:var(--font-anthropic-serif);font-weight:400;font-size:1.15em}
+.tp-ctrls{display:flex;flex-wrap:wrap;gap:var(--cds-gap-sm);align-items:center}
+.tp-select{font:inherit;font-size:var(--cds-font-size-caption);color:var(--color-fg);background:var(--color-bg);border:1px solid var(--color-border-line);border-radius:999px;padding:var(--cds-pad-xs) var(--cds-pad-md)}
+.tp-pills{display:flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:999px;background:color-mix(in srgb,var(--color-fg) 6%,transparent);border:1px solid var(--color-border-line)}
+.tp-pill{font:inherit;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);background:transparent;border:0;border-radius:999px;padding:var(--cds-pad-xs) var(--cds-pad-sm);cursor:pointer;white-space:nowrap}
+.tp-pill:hover{color:var(--color-fg)}
+.tp-pill[aria-pressed=true]{background:var(--color-bg);color:var(--color-fg);box-shadow:0 1px 3px color-mix(in srgb,var(--color-fg) 18%,transparent)}
+.tp-range{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12.5rem),1fr));gap:var(--cds-gap-md)}
+.tp-kpi{position:relative;overflow:hidden;background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:calc(var(--cds-radius) * 1.5);padding:var(--cds-pad-lg) var(--cds-pad-lg) 0;display:flex;flex-direction:column;gap:var(--cds-gap-xs)}
+.tp-kpi::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--tp-a0,#888),var(--tp-a1,#888));opacity:.85}
+.tp-kpi-l{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-big{font-family:var(--font-anthropic-serif);font-weight:400;font-size:calc(var(--cds-font-size-title) * 1.15);line-height:1.15;font-variant-numeric:tabular-nums;min-height:1.15em}
+.tp-cmp{display:flex;align-items:center;gap:var(--cds-gap-xs);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);min-height:1.5rem}
+.tp-delta{display:inline-flex;align-items:center;gap:2px;padding:1px var(--cds-pad-xs);border-radius:999px;font-variant-numeric:tabular-nums;font-weight:var(--cds-font-weight-medium);background:color-mix(in srgb,currentColor 12%,transparent)}
+.tp-delta.ok{color:var(--color-ok)}.tp-delta.bad{color:var(--color-bad)}.tp-delta.flat{color:var(--color-fg-muted)}
+.tp-spark{height:44px;margin:var(--cds-gap-xs) calc(-1 * var(--cds-pad-lg)) 0}
+.tp-spark svg{display:block}
+.tp-card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:calc(var(--cds-radius) * 1.5);padding:var(--cds-pad-lg);min-width:0}
+.tp-h2{margin:var(--cds-gap-xs) 0 0;font-size:calc(var(--cds-font-size-heading) * 1.15);font-weight:var(--cds-font-weight-medium)}
+.tp-card h2{margin:var(--cds-gap-xs) 0 0;font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium)}
+.tp-note{margin:var(--cds-gap-xs) 0 var(--cds-gap-md);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr));gap:var(--cds-gap-md)}
+.tp-grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,17rem),1fr));gap:var(--cds-gap-md)}
+.tp-alerts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,19rem),1fr));gap:var(--cds-gap-sm);min-height:3rem}
+.tp-alert{display:flex;gap:var(--cds-gap-sm);align-items:flex-start;padding:var(--cds-pad-sm) var(--cds-pad-md);border-radius:var(--cds-radius);background:color-mix(in srgb,var(--tp-c) 8%,transparent);border:1px solid color-mix(in srgb,var(--tp-c) 25%,transparent);font-size:var(--cds-font-size-caption);line-height:1.45}
+.tp-alert.ok{--tp-c:var(--color-ok)}.tp-alert.warn{--tp-c:var(--color-warn)}.tp-alert.bad{--tp-c:var(--color-bad)}
+.tp-alert i{flex:none;width:.55rem;height:.55rem;border-radius:50%;margin-top:.35rem;background:var(--tp-c)}
+.tp-alert strong{display:block;font-size:var(--cds-font-size-body);font-weight:var(--cds-font-weight-medium);color:var(--color-fg)}
+.tp-alert span{color:var(--color-fg-muted)}
+.tp-funnel{display:flex;flex-direction:column;gap:var(--cds-gap-xs)}
+.tp-step{display:grid;grid-template-columns:minmax(8rem,11rem) 1fr;gap:var(--cds-gap-sm);align-items:center}
+.tp-step-l{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-step-l b{display:block;color:var(--color-fg);font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium);font-variant-numeric:tabular-nums}
+.tp-bar{height:2rem;border-radius:var(--cds-radius);background:color-mix(in srgb,var(--color-fg) 5%,transparent);position:relative;overflow:hidden}
+.tp-bar span{position:absolute;inset:0 auto 0 0;border-radius:var(--cds-radius)}
+.tp-drop{display:flex;align-items:center;gap:var(--cds-gap-xs);padding-left:min(11rem,38%);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-drop::before{content:"↓";opacity:.6}
+.tp-drop b{font-weight:600;color:var(--color-fg);font-variant-numeric:tabular-nums}
+.tp-mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,8.5rem),1fr));gap:var(--cds-gap-md) var(--cds-gap-lg)}
+.tp-mini > div{display:flex;flex-direction:column;gap:2px;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-mini b{font-size:var(--cds-font-size-heading);color:var(--color-fg);font-weight:var(--cds-font-weight-medium);font-variant-numeric:tabular-nums}
+.tp-mini .tp-delta{align-self:flex-start;font-size:11px}
+.tp-chart{position:relative;min-height:260px}
+.tp-legend{display:flex;flex-wrap:wrap;gap:var(--cds-gap-md);font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin-bottom:var(--cds-gap-sm)}
+.tp-sw{display:inline-block;width:.6rem;height:.6rem;border-radius:2px;margin-right:.35rem;vertical-align:middle}
+.tp-sw.ln{height:2px;width:.9rem;border-radius:1px}
+.tp-tip{position:absolute;pointer-events:none;background:var(--cds-surface-popover);border:1px solid var(--cds-border);border-radius:var(--cds-radius);box-shadow:var(--cds-shadow-popover);padding:var(--cds-pad-xs) var(--cds-pad-sm);font-size:var(--cds-font-size-caption);white-space:nowrap;z-index:2;font-variant-numeric:tabular-nums}
+.tp-tip .d{color:var(--cds-text-secondary);margin-bottom:2px}
+.tp-fail{display:flex;align-items:center;justify-content:center;gap:.4rem;min-height:inherit;height:100%;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.tp-fail i{width:.375rem;height:.375rem;border-radius:50%;background:var(--color-bad)}
+.tp-tablebox{overflow:auto;max-height:30rem;margin:0 calc(-1 * var(--cds-pad-lg)) calc(-1 * var(--cds-pad-lg));border-top:1px solid var(--color-border-line)}
+.tp-table{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.tp-table th,.tp-table td{text-align:right;padding:var(--cds-pad-sm) var(--cds-pad-md);border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.tp-table th:first-child,.tp-table td:first-child{text-align:left;white-space:normal;min-width:14rem}
+.tp-table th{position:sticky;top:0;background:var(--color-panel);color:var(--color-fg-muted);font-weight:var(--cds-font-weight-medium);z-index:1}
+.tp-table th.tp-sort{cursor:pointer;user-select:none}
+.tp-table th.tp-sort:hover{color:var(--color-fg)}
+.tp-table th[aria-sort=descending]::after{content:" ↓"}.tp-table th[aria-sort=ascending]::after{content:" ↑"}
+.tp-table tbody tr:hover td{background:color-mix(in srgb,var(--color-fg) 4%,transparent)}
+.tp-sub{display:block;color:var(--color-fg-muted);font-size:11px;margin-top:2px}
+.tp-dot{display:inline-block;width:.45rem;height:.45rem;border-radius:50%;margin-right:.35rem;vertical-align:middle}
+.tp-roas{display:inline-flex;align-items:center;gap:var(--cds-gap-xs);justify-content:flex-end}
+.tp-roas span{display:inline-block;height:.4rem;border-radius:2px;min-width:2px}
+.tp-badge{display:inline-block;padding:1px var(--cds-pad-xs);border-radius:999px;font-weight:var(--cds-font-weight-medium);font-size:11px;background:color-mix(in srgb,currentColor 12%,transparent)}
+.tp-badge.ok{color:var(--color-ok)}.tp-badge.bad{color:var(--color-bad)}.tp-badge.warn{color:var(--color-warn)}
+.tp-foot{font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);margin:0}
+.tp-brk{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-caption);font-variant-numeric:tabular-nums}
+.tp-brk th,.tp-brk td{padding:var(--cds-pad-xs) var(--cds-pad-sm);border-bottom:1px solid var(--color-border-line);text-align:right;white-space:nowrap}
+.tp-brk th{color:var(--color-fg-muted);font-weight:var(--cds-font-weight-medium)}
+.tp-brk th:first-child,.tp-brk td:first-child{text-align:left}
+.tp-brk tbody tr:last-child td{border-bottom:0}
+.tp-share{display:flex;align-items:center;gap:var(--cds-gap-xs);justify-content:flex-end}
+.tp-share span:first-child{display:inline-block;height:.45rem;border-radius:2px;min-width:2px}
+.tp-pace{display:flex;flex-direction:column;gap:var(--cds-gap-md)}
+.tp-pace-bar{position:relative;height:.9rem;border-radius:999px;background:color-mix(in srgb,var(--color-fg) 7%,transparent);overflow:hidden}
+.tp-pace-bar span{position:absolute;inset:0 auto 0 0;border-radius:999px}
+.tp-pace-legend{display:flex;justify-content:space-between;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.tp-tabs{display:flex;gap:var(--cds-gap-xs);border-bottom:1px solid var(--color-border-line);overflow-x:auto}
+.tp-tab{font:inherit;font-size:var(--cds-font-size-body);color:var(--color-fg-muted);background:none;border:0;border-bottom:2px solid transparent;padding:var(--cds-pad-sm) var(--cds-pad-md);cursor:pointer;white-space:nowrap;margin-bottom:-1px}
+.tp-tab:hover{color:var(--color-fg)}
+.tp-tab[aria-selected=true]{color:var(--color-fg);border-bottom-color:var(--tp-a0,currentColor);font-weight:var(--cds-font-weight-medium)}
+.tp-panel{display:flex;flex-direction:column;gap:var(--cds-gap-lg)}
+.tp-panel[hidden]{display:none}
+.tp-potencial{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:var(--cds-gap-md)}
+.tp-recs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--cds-gap-md);min-height:6rem}
+.tp-rec{display:grid;grid-template-columns:auto 1fr;gap:var(--cds-gap-md);background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:calc(var(--cds-radius) * 1.5);padding:var(--cds-pad-lg)}
+.tp-rec-n{width:2.2rem;height:2.2rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-heading);color:var(--color-bg);background:linear-gradient(135deg,var(--tp-a0,#888),var(--tp-a1,#888))}
+.tp-rec-b{display:flex;flex-direction:column;gap:var(--cds-gap-sm);min-width:0}
+.tp-rec-top{display:flex;flex-wrap:wrap;gap:var(--cds-gap-xs) var(--cds-gap-sm);align-items:center}
+.tp-rec h3{margin:0;font-size:var(--cds-font-size-heading);font-weight:var(--cds-font-weight-medium)}
+.tp-tag{font-size:11px;padding:1px var(--cds-pad-xs);border-radius:999px;border:1px solid var(--color-border-line);color:var(--color-fg-muted)}
+.tp-impact{display:flex;flex-wrap:wrap;gap:var(--cds-gap-sm)}
+.tp-impact span{font-size:var(--cds-font-size-caption);font-weight:var(--cds-font-weight-medium);color:var(--color-ok);background:color-mix(in srgb,var(--color-ok) 12%,transparent);padding:2px var(--cds-pad-sm);border-radius:999px;font-variant-numeric:tabular-nums}
+.tp-impact span.n{color:var(--color-fg-muted);background:color-mix(in srgb,var(--color-fg) 7%,transparent)}
+.tp-rec p{margin:0;font-size:var(--cds-font-size-body);line-height:1.5;color:var(--color-fg-muted)}
+.tp-rec ol{margin:0;padding-left:1.2rem;font-size:var(--cds-font-size-caption);line-height:1.6}
+.tp-rec details summary{cursor:pointer;font-size:var(--cds-font-size-caption);color:var(--color-fg);font-weight:var(--cds-font-weight-medium)}
+.tp [data-dash-source-state=empty]{color:transparent}
+.tp [data-dash-source-state=refreshing]{opacity:.5;transition:opacity var(--cds-dur-slow)}
+.tp .tp-axis text{fill:var(--color-fg-muted);font-size:11px}
+@media (prefers-reduced-motion:no-preference){.tp-bar span{transition:width var(--cds-dur-slow) var(--cds-ease-out)}}
+</style>
+<div class="tp">
+  <header class="tp-hero" id="topo">
+    <div class="tp-hero-top">
+      <div>
+        <p class="tp-eyebrow">Meta Ads · Técnicas para Concursos</p>
+        <h1 class="tp-title">Painel de desempenho</h1>
+        <p class="tp-acct"><span data-draw="txt" data-source="totais" data-field="name" data-row="0">—</span></p>
+      </div>
+      <div class="tp-ctrls">
+        <select class="tp-select tp-conta" aria-label="Conta de anúncios">
+          <option value="268664780005258">CA - Técnicas [Principal]</option>
+          <option value="1049900431171398">CA - Técnicas [Reserva]</option>
+          <option value="2293124358186724">CA - Técnicas [Sala Secreta]</option>
+          <option value="1609678830686048">CA - Técnicas [Gabarito]</option>
+        </select>
+      </div>
+    </div>
+    <div class="tp-ctrls">
+      <div class="tp-pills" role="group" aria-label="Período">
+        <button class="tp-pill" data-p="yesterday">Ontem</button>
+        <button class="tp-pill" data-p="d7">7 dias</button>
+        <button class="tp-pill" data-p="d14">14 dias</button>
+        <button class="tp-pill" data-p="d30">30 dias</button>
+        <button class="tp-pill" data-p="this_month">Este mês</button>
+        <button class="tp-pill" data-p="last_month">Mês passado</button>
+        <button class="tp-pill" data-p="d90">90 dias</button>
+      </div>
+      <span class="tp-range"><span data-draw="range">—</span> · comparando com <span data-draw="range-ant">—</span></span>
+    </div>
+    <p class="tp-lede">Cada R$ 1 investido voltou <b data-draw="kpi" data-source="kpis" data-field="roas" data-row="0" data-fmt="brl">—</b> em vendas, a <b data-draw="kpi" data-source="kpis" data-field="cpa" data-row="0" data-fmt="brl">—</b> por venda.</p>
+  </header>
+
+  <nav class="tp-tabs" role="tablist" aria-label="Seções">
+    <button class="tp-tab" role="tab" data-tab="geral" id="tab-geral">Visão geral</button>
+    <button class="tp-tab" role="tab" data-tab="recs" id="tab-recs">Recomendações</button>
+  </nav>
+
+  <div class="tp-panel" data-panel="geral" id="geral">
+
+  <section class="tp-kpis" id="resumo" data-fetchpriority="high">
+    <div class="tp-kpi"><span class="tp-kpi-l">Vendas</span><span class="tp-big" data-draw="kpi" data-source="kpis" data-field="vendas" data-row="0" data-fmt="int">—</span>
+      <span class="tp-cmp"><span class="tp-delta" data-draw="delta" data-source="delta" data-field="vendas" data-row="0" data-good="up">—</span>vs anterior</span>
+      <div class="tp-spark" data-draw="spark" data-source="diario_calc" data-k="vendas" data-c="0"></div></div>
+    <div class="tp-kpi"><span class="tp-kpi-l">Investimento</span><span class="tp-big" data-draw="kpi" data-source="kpis" data-field="investimento" data-row="0" data-fmt="brl">—</span>
+      <span class="tp-cmp"><span class="tp-delta" data-draw="delta" data-source="delta" data-field="investimento" data-row="0" data-good="none">—</span>vs anterior</span>
+      <div class="tp-spark" data-draw="spark" data-source="diario_calc" data-k="investimento" data-c="0"></div></div>
+    <div class="tp-kpi"><span class="tp-kpi-l">Faturamento atribuído</span><span class="tp-big" data-draw="kpi" data-source="kpis" data-field="faturamento" data-row="0" data-fmt="brl">—</span>
+      <span class="tp-cmp"><span class="tp-delta" data-draw="delta" data-source="delta" data-field="faturamento" data-row="0" data-good="up">—</span>vs anterior</span>
+      <div class="tp-spark" data-draw="spark" data-source="diario_calc" data-k="faturamento" data-c="1"></div></div>
+    <div class="tp-kpi"><span class="tp-kpi-l">Custo por venda</span><span class="tp-big" data-draw="kpi" data-source="kpis" data-field="cpa" data-row="0" data-fmt="brl">—</span>
+      <span class="tp-cmp"><span class="tp-delta" data-draw="delta" data-source="delta" data-field="cpa" data-row="0" data-good="down">—</span>vs anterior</span>
+      <div class="tp-spark" data-draw="spark" data-source="diario_calc" data-k="cpa_mm7" data-c="2"></div></div>
+    <div class="tp-kpi"><span class="tp-kpi-l">ROAS</span><span class="tp-big" data-draw="kpi" data-source="kpis" data-field="roas" data-row="0" data-fmt="dec">—</span>
+      <span class="tp-cmp"><span class="tp-delta" data-draw="delta" data-source="delta" data-field="roas" data-row="0" data-good="up">—</span>vs anterior</span>
+      <div class="tp-spark" data-draw="spark" data-source="diario_calc" data-k="roas_mm7" data-c="1"></div></div>
+    <div class="tp-kpi"><span class="tp-kpi-l">Ticket médio</span><span class="tp-big" data-draw="kpi" data-source="kpis" data-field="ticket" data-row="0" data-fmt="brl">—</span>
+      <span class="tp-cmp"><span class="tp-delta" data-draw="delta" data-source="delta" data-field="ticket" data-row="0" data-good="up">—</span>vs anterior</span>
+      <div class="tp-spark" data-draw="spark" data-source="diario_calc" data-k="ticket_mm7" data-c="3"></div></div>
+  </section>
+
+  <section class="tp-card" id="diagnostico">
+    <p class="tp-eyebrow">Diagnóstico automático</p>
+    <h2>O que pede atenção agora</h2>
+    <p class="tp-note">Regras simples sobre os números do período e a comparação com o anterior. Servem de ponto de partida, não substituem a análise.</p>
+    <ul class="tp-alerts" data-draw="alertas" data-source="alertas"></ul>
+  </section>
+
+  <div class="tp-grid">
+    <section class="tp-card" id="funil">
+      <p class="tp-eyebrow">Funil</p>
+      <h2>Do anúncio à venda</h2>
+      <p class="tp-note">Entre as etapas, a taxa de quem avançou. Barras em escala logarítmica para as menores ficarem visíveis.</p>
+      <div class="tp-funnel">
+        <div class="tp-step"><div class="tp-step-l">Impressões<b data-draw="kpi" data-source="totais" data-field="impressions" data-row="0" data-fmt="int">—</b></div><div class="tp-bar" data-draw="fbar" data-source="totais" data-k="impressions"></div></div>
+        <div class="tp-drop">CTR de link <b data-draw="kpi" data-source="kpis" data-field="ctr_link" data-row="0" data-fmt="pct2">—</b></div>
+        <div class="tp-step"><div class="tp-step-l">Cliques no link<b data-draw="kpi" data-source="totais" data-field="link_click" data-row="0" data-fmt="int">—</b></div><div class="tp-bar" data-draw="fbar" data-source="totais" data-k="link_click"></div></div>
+        <div class="tp-drop">Página carregou <b data-draw="kpi" data-source="kpis" data-field="connect" data-row="0" data-fmt="pct1">—</b></div>
+        <div class="tp-step"><div class="tp-step-l">Visualizações da página<b data-draw="kpi" data-source="totais" data-field="landing_page_view" data-row="0" data-fmt="int">—</b></div><div class="tp-bar" data-draw="fbar" data-source="totais" data-k="landing_page_view"></div></div>
+        <div class="tp-drop">Página → checkout <b data-draw="kpi" data-source="kpis" data-field="lp_ic" data-row="0" data-fmt="pct1">—</b></div>
+        <div class="tp-step"><div class="tp-step-l">Checkouts iniciados<b data-draw="kpi" data-source="totais" data-field="omni_initiated_checkout" data-row="0" data-fmt="int">—</b></div><div class="tp-bar" data-draw="fbar" data-source="totais" data-k="omni_initiated_checkout"></div></div>
+        <div class="tp-drop">Checkout → venda <b data-draw="kpi" data-source="kpis" data-field="ic_venda" data-row="0" data-fmt="pct1">—</b></div>
+        <div class="tp-step"><div class="tp-step-l">Vendas<b data-draw="kpi" data-source="totais" data-field="omni_purchase" data-row="0" data-fmt="int">—</b></div><div class="tp-bar" data-draw="fbar" data-source="totais" data-k="omni_purchase"></div></div>
+      </div>
+    </section>
+    <section class="tp-card" id="eficiencia">
+      <p class="tp-eyebrow">Eficiência</p>
+      <h2>Custos e taxas</h2>
+      <p class="tp-note">Variação em relação ao período anterior de mesma duração.</p>
+      <div class="tp-mini">
+        <div>CPM<b data-draw="kpi" data-source="kpis" data-field="cpm" data-row="0" data-fmt="brl">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="cpm" data-row="0" data-good="down">—</span></div>
+        <div>CPC (link)<b data-draw="kpi" data-source="kpis" data-field="cpc_link" data-row="0" data-fmt="brl">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="cpc_link" data-row="0" data-good="down">—</span></div>
+        <div>Custo por visita à página<b data-draw="kpi" data-source="kpis" data-field="c_lp" data-row="0" data-fmt="brl">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="c_lp" data-row="0" data-good="down">—</span></div>
+        <div>Custo por checkout<b data-draw="kpi" data-source="kpis" data-field="c_ic" data-row="0" data-fmt="brl">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="c_ic" data-row="0" data-good="down">—</span></div>
+        <div>CTR de link<b data-draw="kpi" data-source="kpis" data-field="ctr_link" data-row="0" data-fmt="pct2">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="ctr_link" data-row="0" data-good="up">—</span></div>
+        <div>CTR (todos)<b data-draw="kpi" data-source="kpis" data-field="ctr_all" data-row="0" data-fmt="pct2">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="ctr_all" data-row="0" data-good="up">—</span></div>
+        <div>Página carregou<b data-draw="kpi" data-source="kpis" data-field="connect" data-row="0" data-fmt="pct1">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="connect" data-row="0" data-good="up">—</span></div>
+        <div>Clique → venda<b data-draw="kpi" data-source="kpis" data-field="conv" data-row="0" data-fmt="pct1">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="conv" data-row="0" data-good="up">—</span></div>
+        <div>Alcance<b data-draw="kpi" data-source="kpis" data-field="alcance" data-row="0" data-fmt="int">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="alcance" data-row="0" data-good="up">—</span></div>
+        <div>Frequência<b data-draw="kpi" data-source="kpis" data-field="freq" data-row="0" data-fmt="dec">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="freq" data-row="0" data-good="down">—</span></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="tp-grid">
+    <section class="tp-card" id="diario">
+      <p class="tp-eyebrow">Dia a dia</p>
+      <h2>Investimento e faturamento</h2>
+      <p class="tp-note">Barras: investimento do dia. Linha: faturamento atribuído pelo pixel.</p>
+      <div class="tp-legend"><span><i class="tp-sw tp-sw0"></i>Investimento</span><span><i class="tp-sw ln tp-sw1"></i>Faturamento</span></div>
+      <div class="tp-chart dash-skeleton" data-draw="chart-money" data-source="diario_calc"></div>
+    </section>
+    <section class="tp-card" id="cpa-dia">
+      <p class="tp-eyebrow">Dia a dia</p>
+      <h2>Vendas e custo por venda</h2>
+      <p class="tp-note">Barras: vendas do dia. Linha: custo por venda na média móvel de 7 dias, que suaviza os dias isolados.</p>
+      <div class="tp-legend"><span><i class="tp-sw tp-sw2"></i>Vendas</span><span><i class="tp-sw ln tp-sw3"></i>Custo por venda (média 7 dias)</span></div>
+      <div class="tp-chart dash-skeleton" data-draw="chart-cpa" data-source="diario_calc"></div>
+    </section>
+  </div>
+
+  <div class="tp-grid">
+    <section class="tp-card" id="ritmo">
+      <p class="tp-eyebrow">Orçamento</p>
+      <h2>Ritmo de gasto no mês</h2>
+      <p class="tp-note">Mês corrente, independente do período escolhido. A projeção soma o gasto até agora com o orçamento diário dos conjuntos e campanhas ativos nos dias que faltam.</p>
+      <div class="tp-pace">
+        <div class="tp-mini">
+          <div>Gasto no mês<b data-draw="kpi" data-source="ritmo" data-field="gasto_mes" data-row="0" data-fmt="brl">—</b></div>
+          <div>Média por dia<b data-draw="kpi" data-source="ritmo" data-field="media_dia" data-row="0" data-fmt="brl">—</b></div>
+          <div>Orçamento diário ativo<b data-draw="kpi" data-source="ritmo" data-field="orc_dia" data-row="0" data-fmt="brl">—</b></div>
+          <div>Projeção do mês<b data-draw="kpi" data-source="ritmo" data-field="projecao" data-row="0" data-fmt="brl">—</b></div>
+        </div>
+        <div>
+          <div class="tp-pace-bar" data-draw="pace" data-source="ritmo"></div>
+          <div class="tp-pace-legend"><span>Dia <span data-draw="kpi" data-source="ritmo" data-field="dia" data-row="0" data-fmt="int">—</span> de <span data-draw="kpi" data-source="ritmo" data-field="dias_mes" data-row="0" data-fmt="int">—</span></span><span><span data-draw="kpi" data-source="ritmo" data-field="pct" data-row="0" data-fmt="pct1">—</span> da projeção já gasto</span></div>
+        </div>
+      </div>
+    </section>
+    <section class="tp-card" id="video">
+      <p class="tp-eyebrow">Criativos em vídeo</p>
+      <h2>Retenção</h2>
+      <p class="tp-note">Sobre as reproduções iniciadas dos anúncios em vídeo.</p>
+      <div class="tp-mini">
+        <div>Assistiram 25%<b data-draw="kpi" data-source="kpis" data-field="v25" data-row="0" data-fmt="pct1">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="v25" data-row="0" data-good="up">—</span></div>
+        <div>Assistiram 75%<b data-draw="kpi" data-source="kpis" data-field="v75" data-row="0" data-fmt="pct1">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="v75" data-row="0" data-good="up">—</span></div>
+        <div>Taxa de ThruPlay<b data-draw="kpi" data-source="kpis" data-field="vthru" data-row="0" data-fmt="pct1">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="vthru" data-row="0" data-good="up">—</span></div>
+        <div>Custo por ThruPlay<b data-draw="kpi" data-source="kpis" data-field="c_thru" data-row="0" data-fmt="brl">—</b><span class="tp-delta" data-draw="delta" data-source="delta" data-field="c_thru" data-row="0" data-good="down">—</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section id="publico">
+    <p class="tp-eyebrow">Público e entrega</p>
+    <h2 class="tp-h2">Quem compra e onde o anúncio aparece</h2>
+    <div class="tp-grid" style="margin-top:var(--cds-gap-md)">
+      <section class="tp-card" id="idade">
+        <h2>Idade</h2>
+        <p class="tp-note">Participação no investimento e resultado de cada grupo no período.</p>
+        <table class="tp-brk" data-source="br_idade" data-row-key="grupo">
+          <thead><tr><th data-field="grupo">Faixa</th><th data-field="share">Investimento</th><th data-field="vendas">Vendas</th><th data-field="cpa">Custo/venda</th><th data-field="roas">ROAS</th></tr></thead>
+          <tbody data-draw="brk" data-src="br_idade"></tbody>
+        </table>
+      </section>
+      <section class="tp-card" id="genero">
+        <h2>Gênero</h2>
+        <p class="tp-note">Participação no investimento e resultado de cada grupo no período.</p>
+        <table class="tp-brk" data-source="br_genero" data-row-key="grupo">
+          <thead><tr><th data-field="grupo">Gênero</th><th data-field="share">Investimento</th><th data-field="vendas">Vendas</th><th data-field="cpa">Custo/venda</th><th data-field="roas">ROAS</th></tr></thead>
+          <tbody data-draw="brk" data-src="br_genero"></tbody>
+        </table>
+      </section>
+      <section class="tp-card" id="posicao">
+        <h2>Posicionamento</h2>
+        <p class="tp-note">Participação no investimento e resultado de cada grupo no período.</p>
+        <table class="tp-brk" data-source="br_posicao" data-row-key="grupo">
+          <thead><tr><th data-field="grupo">Onde</th><th data-field="share">Investimento</th><th data-field="vendas">Vendas</th><th data-field="cpa">Custo/venda</th><th data-field="roas">ROAS</th></tr></thead>
+          <tbody data-draw="brk" data-src="br_posicao"></tbody>
+        </table>
+      </section>
+      <section class="tp-card" id="dispositivo">
+        <h2>Dispositivo</h2>
+        <p class="tp-note">Participação no investimento e resultado de cada grupo no período.</p>
+        <table class="tp-brk" data-source="br_dispositivo" data-row-key="grupo">
+          <thead><tr><th data-field="grupo">Aparelho</th><th data-field="share">Investimento</th><th data-field="vendas">Vendas</th><th data-field="cpa">Custo/venda</th><th data-field="roas">ROAS</th></tr></thead>
+          <tbody data-draw="brk" data-src="br_dispositivo"></tbody>
+        </table>
+      </section>
+    </div>
+  </section>
+
+  <section class="tp-card" id="conjuntos">
+    <p class="tp-eyebrow">Conjuntos de anúncios</p>
+    <h2>Conjuntos com investimento no período</h2>
+    <p class="tp-note">Ordenados pelo investimento. Orçamento diário atual de cada conjunto.</p>
+    <div class="tp-tablebox">
+      <table class="tp-table" data-source="conjuntos" data-row-key="id">
+        <thead><tr>
+          <th data-field="name">Conjunto</th>
+          <th data-field="daily_budget">Orçamento/dia</th>
+          <th data-field="amount_spent">Investimento</th>
+          <th data-field="omni_purchase">Vendas</th>
+          <th data-source="conj_calc" data-field="cpa">Custo/venda</th>
+          <th data-source="conj_calc" data-field="roas">ROAS</th>
+          <th data-source="conj_calc" data-field="lp_ic">Página → checkout</th>
+          <th data-field="frequency">Frequência</th>
+        </tr></thead>
+        <tbody data-draw="conj-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="tp-card" id="anuncios">
+    <p class="tp-eyebrow">Criativos</p>
+    <h2>Quais anúncios estão vendendo</h2>
+    <p class="tp-note">Clique no título de uma coluna para ordenar. O sinal compara cada anúncio com o custo por venda médio da conta no período.</p>
+    <div class="tp-tablebox">
+      <table class="tp-table tp-ads" data-source="anuncios" data-row-key="id">
+        <thead><tr>
+          <th class="tp-sort" data-sort="name" data-field="name">Anúncio</th>
+          <th data-source="ad_calc" data-field="sinal">Sinal</th>
+          <th class="tp-sort" data-sort="amount_spent" data-field="amount_spent" aria-sort="descending">Investimento</th>
+          <th class="tp-sort" data-sort="omni_purchase" data-field="omni_purchase">Vendas</th>
+          <th class="tp-sort" data-sort="cpa" data-source="ad_calc" data-field="cpa">Custo/venda</th>
+          <th class="tp-sort" data-sort="roas" data-source="ad_calc" data-field="roas">ROAS</th>
+          <th class="tp-sort" data-sort="ctr_link" data-source="ad_calc" data-field="ctr_link">CTR link</th>
+          <th class="tp-sort" data-sort="lp_ic" data-source="ad_calc" data-field="lp_ic">Página → checkout</th>
+          <th class="tp-sort" data-sort="vthru" data-source="ad_calc" data-field="vthru">ThruPlay</th>
+        </tr></thead>
+        <tbody data-draw="ad-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="tp-card" id="campanhas">
+    <p class="tp-eyebrow">Campanhas</p>
+    <h2>Campanhas com investimento no período</h2>
+    <p class="tp-note">Ordenadas pelo investimento.</p>
+    <div class="tp-tablebox">
+      <table class="tp-table" data-source="campanhas" data-row-key="id">
+        <thead><tr>
+          <th data-field="name">Campanha</th>
+          <th data-source="camp_calc" data-field="situacao">Status</th>
+          <th data-field="amount_spent">Investimento</th>
+          <th data-field="omni_purchase">Vendas</th>
+          <th data-field="omni_purchase_values">Faturamento</th>
+          <th data-source="camp_calc" data-field="cpa">Custo/venda</th>
+          <th data-source="camp_calc" data-field="roas">ROAS</th>
+        </tr></thead>
+        <tbody data-draw="camp-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="tp-panel" data-panel="recs" id="recomendacoes" hidden>
+    <section class="tp-card">
+      <p class="tp-eyebrow">Plano de ação</p>
+      <h2>O que fazer para vender mais</h2>
+      <p class="tp-note">Recomendações geradas a partir dos números do período escolhido, ordenadas pelo ganho estimado. Os ganhos são estimativas por mês (30 dias), supondo que o custo por venda se mantenha; ao escalar, ele costuma subir, então aplique aos poucos e acompanhe aqui.</p>
+      <div class="tp-potencial">
+        <div class="tp-kpi"><span class="tp-kpi-l">Vendas a mais por mês (estimativa)</span><span class="tp-big" data-draw="kpi" data-source="recs_total" data-field="vendas_extra" data-row="0" data-fmt="int">—</span><span class="tp-cmp">somando as recomendações com estimativa</span></div>
+        <div class="tp-kpi"><span class="tp-kpi-l">Faturamento a mais por mês (estimativa)</span><span class="tp-big" data-draw="kpi" data-source="recs_total" data-field="receita_extra" data-row="0" data-fmt="brl">—</span><span class="tp-cmp">a partir do ticket médio atual</span></div>
+        <div class="tp-kpi"><span class="tp-kpi-l">Ações sugeridas</span><span class="tp-big" data-draw="kpi" data-source="recs_total" data-field="acoes" data-row="0" data-fmt="int">—</span><span class="tp-cmp">otimizações, criativos e novas campanhas</span></div>
+      </div>
+    </section>
+    <ol class="tp-recs" data-draw="recs" data-source="recs"></ol>
+  </div>
+
+  <p class="tp-foot">Vendas e faturamento vêm do pixel da Meta, na janela de atribuição padrão. Podem diferir do relatório da plataforma de vendas.</p>
+</div>
+<script>
+dash.loader('totais', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('totais_ant', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('diario', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('campanhas', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('anuncios', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('conjuntos', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('idade', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('genero', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('posicao', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('dispositivo', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('mes', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('orc_conj', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+dash.loader('orc_camp', {
+  description: 'Lê a lista de resultados do Meta Ads e converte valores em reais e contagens em números.',
+  fn: ({ answer }) => {
+    let a = answer;
+    if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { throw new Error(a.slice(0, 300)); } }
+    if (a && a.error) throw new Error(typeof a.error === 'string' ? a.error : (a.error.message || JSON.stringify(a.error)));
+    let list = a && a.ad_entities;
+    if (typeof list === 'string') list = JSON.parse(list);
+    if (!Array.isArray(list)) throw new Error('A resposta não trouxe ad_entities. Chaves: ' + Object.keys(a || {}).join(', '));
+    const text = ['id', 'name', 'adset_name', 'effective_status', 'date_start', 'date_stop', 'age', 'gender', 'publisher_platform', 'platform_position', 'impression_device'];
+    return list.map((r) => {
+      const o = {};
+      for (const [k, v] of Object.entries(r)) {
+        if (text.includes(k)) o[k] = v == null ? null : String(v);
+        else if (v == null) o[k] = null;
+        else if (typeof v === 'object' && 'value' in v) o[k] = Number(v.value);
+        else o[k] = Number(v);
+      }
+      return o;
+    });
+  },
+});
+
+dash.calc('kpis', {
+  inputs: ['totais'],
+  title: 'Indicadores do período',
+  description: 'Custos por etapa, ROAS, ticket médio, taxas do funil e retenção de vídeo a partir dos totais da conta.',
+  fn: (totais) => { const rows = totais; return (() => {
+    const t = rows[0] || {};
+    const inv = t.amount_spent || 0, v = t.omni_purchase || 0, fat = t.omni_purchase_values || 0;
+    const imp = t.impressions || 0, lc = t.link_click || 0, lp = t.landing_page_view || 0, ic = t.omni_initiated_checkout || 0;
+    const vp = t.video_play_actions || 0, th = t.video_thruplay_watched_actions || 0;
+    const div = (a, b) => (b ? a / b : null);
+    return [{
+      investimento: inv, vendas: v, faturamento: fat, alcance: t.reach ?? null, freq: t.frequency ?? null,
+      cpa: div(inv, v), roas: div(fat, inv), ticket: div(fat, v),
+      ctr_link: div(lc, imp), ctr_all: div(t.clicks || 0, imp), cpm: imp ? inv / imp * 1000 : null,
+      cpc_link: div(inv, lc), connect: div(lp, lc), lp_ic: div(ic, lp), ic_venda: div(v, ic), conv: div(v, lc),
+      c_lp: div(inv, lp), c_ic: div(inv, ic),
+      v25: div(t.video_p25_watched_actions || 0, vp), v75: div(t.video_p75_watched_actions || 0, vp), vthru: div(th, vp), c_thru: div(inv, th),
+    }];
+  })(); },
+});
+dash.calc('kpis_ant', {
+  inputs: ['totais_ant'],
+  title: 'Indicadores do período anterior',
+  description: 'Os mesmos indicadores, calculados sobre o período anterior de mesma duração.',
+  fn: (totais_ant) => { const rows = totais_ant; return (() => {
+    const t = rows[0] || {};
+    const inv = t.amount_spent || 0, v = t.omni_purchase || 0, fat = t.omni_purchase_values || 0;
+    const imp = t.impressions || 0, lc = t.link_click || 0, lp = t.landing_page_view || 0, ic = t.omni_initiated_checkout || 0;
+    const vp = t.video_play_actions || 0, th = t.video_thruplay_watched_actions || 0;
+    const div = (a, b) => (b ? a / b : null);
+    return [{
+      investimento: inv, vendas: v, faturamento: fat, alcance: t.reach ?? null, freq: t.frequency ?? null,
+      cpa: div(inv, v), roas: div(fat, inv), ticket: div(fat, v),
+      ctr_link: div(lc, imp), ctr_all: div(t.clicks || 0, imp), cpm: imp ? inv / imp * 1000 : null,
+      cpc_link: div(inv, lc), connect: div(lp, lc), lp_ic: div(ic, lp), ic_venda: div(v, ic), conv: div(v, lc),
+      c_lp: div(inv, lp), c_ic: div(inv, ic),
+      v25: div(t.video_p25_watched_actions || 0, vp), v75: div(t.video_p75_watched_actions || 0, vp), vthru: div(th, vp), c_thru: div(inv, th),
+    }];
+  })(); },
+});
+dash.calc('delta', {
+  inputs: ['kpis', 'kpis_ant'],
+  title: 'Variação vs período anterior',
+  description: 'Variação percentual de cada indicador em relação ao período anterior de mesma duração.',
+  fn: (kpis, kpis_ant) => {
+    const a = kpis[0] || {}, b = kpis_ant[0] || {};
+    const out = {};
+    for (const k of Object.keys(a)) out[k] = a[k] != null && b[k] ? (a[k] - b[k]) / Math.abs(b[k]) : null;
+    return [out];
+  },
+});
+dash.calc('diario_calc', {
+  inputs: ['diario'],
+  title: 'Indicadores por dia',
+  description: 'Investimento, vendas e faturamento por dia, com custo por venda, ROAS e ticket em média móvel de 7 dias.',
+  fn: (diario) => {
+    const rows = diario.map((r) => ({dia: r.date_start, investimento: r.amount_spent || 0, vendas: r.omni_purchase || 0, faturamento: r.omni_purchase_values || 0}))
+      .sort((a, b) => (a.dia < b.dia ? -1 : 1));
+    return rows.map((r, i) => {
+      const w = rows.slice(Math.max(0, i - 6), i + 1);
+      const inv = w.reduce((s, x) => s + x.investimento, 0), v = w.reduce((s, x) => s + x.vendas, 0), f = w.reduce((s, x) => s + x.faturamento, 0);
+      return {...r, cpa: r.vendas ? r.investimento / r.vendas : null, roas: r.investimento ? r.faturamento / r.investimento : null,
+        cpa_mm7: v ? inv / v : null, roas_mm7: inv ? f / inv : null, ticket_mm7: v ? f / v : null};
+    });
+  },
+});
+dash.calc('ad_calc', {
+  inputs: ['anuncios'],
+  title: 'Indicadores e sinal por criativo',
+  description: 'Custo por venda, ROAS e taxas de cada anúncio; o sinal compara o custo por venda com a média da conta (Escalar: até 80% da média com 5+ vendas; Atenção: 150%+ da média; Pausar: gastou 1,5× a média sem vender).',
+  fn: (anuncios) => {
+    const gasto = anuncios.reduce((s, a) => s + (a.amount_spent || 0), 0);
+    const vendas = anuncios.reduce((s, a) => s + (a.omni_purchase || 0), 0);
+    const media = vendas ? gasto / vendas : null;
+    const nomes = {ACTIVE: 'Ativo', PAUSED: 'Pausado', ADSET_PAUSED: 'Conjunto pausado', CAMPAIGN_PAUSED: 'Campanha pausada', ARCHIVED: 'Arquivado', IN_PROCESS: 'Em análise', WITH_ISSUES: 'Com problemas', DISAPPROVED: 'Reprovado', PENDING_REVIEW: 'Em revisão'};
+    return anuncios.map((a) => {
+      const v = a.omni_purchase || 0, g = a.amount_spent || 0;
+      const cpa = v ? g / v : null;
+      let sinal = null;
+      if (media) {
+        if (v >= 5 && cpa <= media * 0.8) sinal = 'Escalar';
+        else if (v === 0 && g >= media * 1.5) sinal = 'Pausar';
+        else if (v >= 1 && cpa >= media * 1.5) sinal = 'Atenção';
+      }
+      return {
+        id: a.id, nome: a.name, conjunto: a.adset_name, gasto: g, vendas: v, ticket: v ? (a.omni_purchase_values || 0) / v : null, situacao: nomes[a.effective_status] || a.effective_status, ativo: a.effective_status === 'ACTIVE',
+        cpa, roas: g ? (a.omni_purchase_values || 0) / g : null,
+        ctr_link: a.impressions ? (a.link_click || 0) / a.impressions : null,
+        lp_ic: a.landing_page_view ? (a.omni_initiated_checkout || 0) / a.landing_page_view : null,
+        vthru: a.video_play_actions ? (a.video_thruplay_watched_actions || 0) / a.video_play_actions : null,
+        sinal,
+      };
+    });
+  },
+});
+dash.calc('camp_calc', {
+  inputs: ['campanhas'],
+  title: 'Custo por venda e ROAS por campanha',
+  description: 'Investimento ÷ vendas e faturamento ÷ investimento de cada campanha, com o status traduzido.',
+  fn: (campanhas) => campanhas.map((c) => ({
+    id: c.id,
+    situacao: ({ACTIVE: 'Ativa', PAUSED: 'Pausada', CAMPAIGN_PAUSED: 'Pausada', ARCHIVED: 'Arquivada', IN_PROCESS: 'Em análise', WITH_ISSUES: 'Com problemas'})[c.effective_status] || c.effective_status,
+    cpa: c.omni_purchase ? c.amount_spent / c.omni_purchase : null,
+    roas: c.amount_spent ? (c.omni_purchase_values || 0) / c.amount_spent : null,
+  })),
+});
+dash.calc('alertas', {
+  inputs: ['kpis', 'delta', 'ad_calc'],
+  title: 'Regras do diagnóstico',
+  description: 'Alertas: frequência acima de 3, menos de 70% dos cliques carregando a página, menos de 50% dos checkouts virando venda, ROAS abaixo de 1, variações acima de 15% no custo por venda ou ROAS, e os sinais dos criativos ativos.',
+  fn: (kpis, delta, ad_calc) => {
+    const k = kpis[0] || {}, d = delta[0] || {};
+    const out = [];
+    if (k.roas != null && k.investimento > 0 && k.roas < 1) out.push({codigo: 'roas_baixo', nivel: 'bad', valor: k.roas});
+    if (d.cpa != null && d.cpa > 0.15) out.push({codigo: 'cpa_up', nivel: 'bad', valor: d.cpa});
+    if (d.roas != null && d.roas < -0.15) out.push({codigo: 'roas_down', nivel: 'bad', valor: d.roas});
+    if (k.freq != null && k.freq > 3) out.push({codigo: 'freq', nivel: 'warn', valor: k.freq, ref: 3});
+    if (k.connect != null && k.connect < 0.7) out.push({codigo: 'connect', nivel: 'warn', valor: k.connect, ref: 0.7});
+    if (k.ic_venda != null && k.ic_venda < 0.5) out.push({codigo: 'checkout', nivel: 'warn', valor: k.ic_venda, ref: 0.5});
+    const ativos = ad_calc.filter((a) => a.ativo);
+    ativos.filter((a) => a.sinal === 'Pausar').forEach((a) => out.push({codigo: 'pausar', nivel: 'bad', nome: a.nome, valor: a.gasto}));
+    ativos.filter((a) => a.sinal === 'Atenção').forEach((a) => out.push({codigo: 'caro', nivel: 'warn', nome: a.nome, valor: a.cpa}));
+    const best = ativos.filter((a) => a.vendas >= 5 && a.roas != null).sort((a, b) => b.roas - a.roas)[0];
+    if (best) out.push({codigo: 'escalar', nivel: 'ok', nome: best.nome, valor: best.roas});
+    if (d.cpa != null && d.cpa < -0.15) out.push({codigo: 'cpa_down', nivel: 'ok', valor: d.cpa});
+    if (d.roas != null && d.roas > 0.15) out.push({codigo: 'roas_up', nivel: 'ok', valor: d.roas});
+    if (!out.length) out.push({codigo: 'tudo_ok', nivel: 'ok'});
+    return out;
+  },
+});
+dash.calc('br_idade', {
+  inputs: ['idade'],
+  title: 'Investimento e resultado por idade',
+  description: 'Participação no investimento, vendas, custo por venda e ROAS de cada grupo, do maior investimento para o menor (grupos pequenos somados em Outros).',
+  fn: (idade) => {
+    const nome = (r) => (r.age === 'Unknown' ? 'Não informada' : r.age);
+    const m = new Map();
+    idade.forEach((r) => {
+      const g = nome(r);
+      const o = m.get(g) || {grupo: g, gasto: 0, vendas: 0, fat: 0};
+      o.gasto += r.amount_spent || 0; o.vendas += r.omni_purchase || 0; o.fat += r.omni_purchase_values || 0;
+      m.set(g, o);
+    });
+    const total = [...m.values()].reduce((s, o) => s + o.gasto, 0) || 1;
+    let rows = [...m.values()].sort((a, b) => b.gasto - a.gasto);
+    if (rows.length > 7) {
+      const resto = rows.slice(6);
+      rows = rows.slice(0, 6).concat([resto.reduce((o, r) => ({grupo: 'Outros', gasto: o.gasto + r.gasto, vendas: o.vendas + r.vendas, fat: o.fat + r.fat}), {grupo: 'Outros', gasto: 0, vendas: 0, fat: 0})]);
+    }
+    return rows.map((o) => ({grupo: o.grupo, share: o.gasto / total, gasto: o.gasto, vendas: o.vendas, cpa: o.vendas ? o.gasto / o.vendas : null, roas: o.gasto ? o.fat / o.gasto : null}));
+  },
+});
+dash.calc('br_genero', {
+  inputs: ['genero'],
+  title: 'Investimento e resultado por gênero',
+  description: 'Participação no investimento, vendas, custo por venda e ROAS de cada grupo, do maior investimento para o menor (grupos pequenos somados em Outros).',
+  fn: (genero) => {
+    const nome = (r) => ({female: 'Mulheres', male: 'Homens'})[r.gender] || 'Não informado';
+    const m = new Map();
+    genero.forEach((r) => {
+      const g = nome(r);
+      const o = m.get(g) || {grupo: g, gasto: 0, vendas: 0, fat: 0};
+      o.gasto += r.amount_spent || 0; o.vendas += r.omni_purchase || 0; o.fat += r.omni_purchase_values || 0;
+      m.set(g, o);
+    });
+    const total = [...m.values()].reduce((s, o) => s + o.gasto, 0) || 1;
+    let rows = [...m.values()].sort((a, b) => b.gasto - a.gasto);
+    if (rows.length > 7) {
+      const resto = rows.slice(6);
+      rows = rows.slice(0, 6).concat([resto.reduce((o, r) => ({grupo: 'Outros', gasto: o.gasto + r.gasto, vendas: o.vendas + r.vendas, fat: o.fat + r.fat}), {grupo: 'Outros', gasto: 0, vendas: 0, fat: 0})]);
+    }
+    return rows.map((o) => ({grupo: o.grupo, share: o.gasto / total, gasto: o.gasto, vendas: o.vendas, cpa: o.vendas ? o.gasto / o.vendas : null, roas: o.gasto ? o.fat / o.gasto : null}));
+  },
+});
+dash.calc('br_posicao', {
+  inputs: ['posicao'],
+  title: 'Investimento e resultado por posicionamento',
+  description: 'Participação no investimento, vendas, custo por venda e ROAS de cada grupo, do maior investimento para o menor (grupos pequenos somados em Outros).',
+  fn: (posicao) => {
+    const nome = (r) => {
+      const p = {instagram: 'Instagram', facebook: 'Facebook', whatsapp: 'WhatsApp', audience_network: 'Audience Network', messenger: 'Messenger', threads: 'Threads'}[r.publisher_platform] || r.publisher_platform;
+      const pos = {feed: 'Feed', instagram_reels: 'Reels', facebook_reels: 'Reels', facebook_reels_overlay: 'Reels (sobreposição)', instagram_stories: 'Stories', facebook_stories: 'Stories', status: 'Status', an_classic: 'Apps e sites', marketplace: 'Marketplace', instream_video: 'Vídeos in-stream', instagram_explore: 'Explorar', instagram_explore_grid_home: 'Explorar', rewarded_video: 'Vídeos premiados', facebook_notification: 'Notificações', facebook_profile_feed: 'Feed do perfil', right_hand_column: 'Coluna direita', search: 'Busca', instagram_search: 'Busca'}[r.platform_position] || r.platform_position;
+      return r.publisher_platform === 'audience_network' ? p : p + ' ' + pos;
+    };
+    const m = new Map();
+    posicao.forEach((r) => {
+      const g = nome(r);
+      const o = m.get(g) || {grupo: g, gasto: 0, vendas: 0, fat: 0};
+      o.gasto += r.amount_spent || 0; o.vendas += r.omni_purchase || 0; o.fat += r.omni_purchase_values || 0;
+      m.set(g, o);
+    });
+    const total = [...m.values()].reduce((s, o) => s + o.gasto, 0) || 1;
+    let rows = [...m.values()].sort((a, b) => b.gasto - a.gasto);
+    if (rows.length > 7) {
+      const resto = rows.slice(6);
+      rows = rows.slice(0, 6).concat([resto.reduce((o, r) => ({grupo: 'Outros', gasto: o.gasto + r.gasto, vendas: o.vendas + r.vendas, fat: o.fat + r.fat}), {grupo: 'Outros', gasto: 0, vendas: 0, fat: 0})]);
+    }
+    return rows.map((o) => ({grupo: o.grupo, share: o.gasto / total, gasto: o.gasto, vendas: o.vendas, cpa: o.vendas ? o.gasto / o.vendas : null, roas: o.gasto ? o.fat / o.gasto : null}));
+  },
+});
+dash.calc('br_dispositivo', {
+  inputs: ['dispositivo'],
+  title: 'Investimento e resultado por dispositivo',
+  description: 'Participação no investimento, vendas, custo por venda e ROAS de cada grupo, do maior investimento para o menor (grupos pequenos somados em Outros).',
+  fn: (dispositivo) => {
+    const nome = (r) => ({android_smartphone: 'Android', iphone: 'iPhone', desktop: 'Computador', android_tablet: 'Tablet Android', ipad: 'iPad'})[r.impression_device] || 'Outros';
+    const m = new Map();
+    dispositivo.forEach((r) => {
+      const g = nome(r);
+      const o = m.get(g) || {grupo: g, gasto: 0, vendas: 0, fat: 0};
+      o.gasto += r.amount_spent || 0; o.vendas += r.omni_purchase || 0; o.fat += r.omni_purchase_values || 0;
+      m.set(g, o);
+    });
+    const total = [...m.values()].reduce((s, o) => s + o.gasto, 0) || 1;
+    let rows = [...m.values()].sort((a, b) => b.gasto - a.gasto);
+    if (rows.length > 7) {
+      const resto = rows.slice(6);
+      rows = rows.slice(0, 6).concat([resto.reduce((o, r) => ({grupo: 'Outros', gasto: o.gasto + r.gasto, vendas: o.vendas + r.vendas, fat: o.fat + r.fat}), {grupo: 'Outros', gasto: 0, vendas: 0, fat: 0})]);
+    }
+    return rows.map((o) => ({grupo: o.grupo, share: o.gasto / total, gasto: o.gasto, vendas: o.vendas, cpa: o.vendas ? o.gasto / o.vendas : null, roas: o.gasto ? o.fat / o.gasto : null}));
+  },
+});
+dash.calc('conj_calc', {
+  inputs: ['conjuntos'],
+  title: 'Indicadores por conjunto',
+  description: 'Custo por venda, ROAS e página → checkout de cada conjunto, com o status traduzido.',
+  fn: (conjuntos) => conjuntos.map((c) => ({
+    id: c.id,
+    situacao: ({ACTIVE: 'Ativo', PAUSED: 'Pausado', CAMPAIGN_PAUSED: 'Campanha pausada', ARCHIVED: 'Arquivado', IN_PROCESS: 'Em análise', WITH_ISSUES: 'Com problemas'})[c.effective_status] || c.effective_status,
+    cpa: c.omni_purchase ? c.amount_spent / c.omni_purchase : null,
+    roas: c.amount_spent ? (c.omni_purchase_values || 0) / c.amount_spent : null,
+    lp_ic: c.landing_page_view ? (c.omni_initiated_checkout || 0) / c.landing_page_view : null,
+  })),
+});
+dash.calc('ritmo', {
+  inputs: ['mes', 'orc_conj', 'orc_camp'],
+  title: 'Ritmo do orçamento no mês',
+  description: 'Gasto do mês até hoje, média por dia e projeção: gasto atual + orçamento diário dos conjuntos e campanhas ativos × dias restantes.',
+  fn: (mes, orc_conj, orc_camp) => {
+    const gasto = mes.reduce((s, r) => s + (r.amount_spent || 0), 0);
+    const ult = mes.map((r) => r.date_start).sort().pop();
+    if (!ult) return [{gasto_mes: 0, media_dia: null, orc_dia: null, projecao: null, dia: null, dias_mes: null, pct: null}];
+    const [y, m, d] = ult.split('-').map(Number);
+    const dias = new Date(y, m, 0).getDate();
+    const orc = orc_conj.reduce((s, r) => s + (r.daily_budget || 0), 0) + orc_camp.reduce((s, r) => s + (r.daily_budget || 0), 0);
+    const proj = gasto + orc * (dias - d);
+    return [{gasto_mes: gasto, media_dia: gasto / d, orc_dia: orc, projecao: proj, dia: d, dias_mes: dias, pct: proj ? gasto / proj : null}];
+  },
+});
+dash.calc('recs', {
+  inputs: ['kpis', 'ad_calc', 'br_posicao', 'br_idade', 'br_dispositivo', 'diario_calc'],
+  title: 'Recomendações e ganho estimado',
+  description: 'Regras sobre os números do período, com ganho convertido para 30 dias. Escala: +30% de verba no criativo vencedor, com 20% de perda de eficiência. Realocar: a verba de criativos/posicionamentos caros rendendo no custo médio da conta. Remarketing: recuperar 15% de quem iniciou checkout e não comprou. Página: chegar a 80% de carregamento (contando só metade do efeito proporcional) ou +2 pontos na taxa página → checkout. Ticket: +10% no valor por venda.',
+  fn: (kpis, ad_calc, br_posicao, br_idade, br_dispositivo, diario_calc) => {
+    const k = kpis[0] || {};
+    const cpa = k.cpa, ticket = k.ticket || 0, vendas = k.vendas || 0;
+    const f = 30 / (diario_calc.length || 30);
+    const out = [];
+    if (!cpa || !vendas) return out;
+    const realoc = (gasto, v) => Math.max(0, gasto / cpa - v);
+    const win = ad_calc.filter((a) => a.ativo && a.vendas >= 5 && a.cpa != null && a.cpa <= cpa * 0.8).sort((a, b) => b.vendas - a.vendas)[0];
+    if (win) {
+      const extra = win.gasto * 0.3 * f, v = extra / win.cpa * 0.8;
+      out.push({codigo: 'escalar', nome: win.nome, conjunto: win.conjunto, cpa_item: win.cpa, roas_item: win.roas, cpa_conta: cpa, invest_extra: extra, vendas_extra: v, receita_extra: v * (win.ticket || ticket)});
+    }
+    const caros = ad_calc.filter((a) => a.ativo && (a.sinal === 'Pausar' || a.sinal === 'Atenção'));
+    if (caros.length) {
+      const g = caros.reduce((s, a) => s + a.gasto, 0) * f, v = caros.reduce((s, a) => s + a.vendas, 0) * f;
+      const x = realoc(g, v);
+      out.push({codigo: 'realocar_ads', nome: caros.map((a) => a.nome).join(', '), gasto_item: g, vendas_extra: x, receita_extra: x * ticket});
+    }
+    const pos = br_posicao.filter((g) => g.grupo !== 'Outros' && g.share >= 0.02 && (g.vendas === 0 ? g.gasto >= cpa : g.cpa >= cpa * 1.8));
+    if (pos.length) {
+      const g = pos.reduce((s, x) => s + x.gasto, 0) * f, v = pos.reduce((s, x) => s + x.vendas, 0) * f;
+      const x = realoc(g, v);
+      out.push({codigo: 'posicao', nome: pos.map((x) => x.grupo).join(', '), gasto_item: g, vendas_extra: x, receita_extra: x * ticket});
+    }
+    const id = br_idade.filter((g) => g.grupo !== 'Outros' && g.share >= 0.08 && g.cpa != null && g.cpa >= cpa * 1.3).sort((a, b) => b.cpa - a.cpa)[0];
+    if (id) {
+      const x = realoc(id.gasto * f * 0.5, id.vendas * f * 0.5);
+      out.push({codigo: 'idade', nome: id.grupo, cpa_item: id.cpa, cpa_conta: cpa, share: id.share, vendas_extra: x, receita_extra: x * ticket});
+    }
+    const dv = br_dispositivo.filter((g) => g.grupo !== 'Outros' && g.share >= 0.1 && (g.cpa == null || g.cpa >= cpa * 1.5))[0];
+    if (dv) out.push({codigo: 'dispositivo', nome: dv.grupo, cpa_item: dv.cpa, cpa_conta: cpa});
+    if (k.ic_venda) {
+      const abandono = (vendas / k.ic_venda - vendas) * f;
+      if (abandono >= 10) { const x = abandono * 0.15; out.push({codigo: 'remarketing', base: abandono, vendas_extra: x, receita_extra: x * ticket}); }
+    }
+    if (k.connect != null && k.connect < 0.75) { const x = vendas * f * (0.8 / k.connect - 1) * 0.5; out.push({codigo: 'velocidade', taxa: k.connect, vendas_extra: x, receita_extra: x * ticket}); }
+    if (k.lp_ic != null && k.lp_ic > 0 && k.lp_ic < 0.2) { const x = vendas * f * (0.02 / k.lp_ic); out.push({codigo: 'oferta_lp', taxa: k.lp_ic, vendas_extra: x, receita_extra: x * ticket}); }
+    if (k.freq != null && k.freq > 2.5) out.push({codigo: 'novos_criativos', freq: k.freq, nome: win ? win.nome : null});
+    if (ticket) out.push({codigo: 'ticket', ticket, vendas_extra: 0, receita_extra: (k.faturamento || 0) * f * 0.1});
+    if (vendas * f >= 50) out.push({codigo: 'lookalike', base: vendas * f});
+    return out.sort((a, b) => (b.receita_extra || 0) - (a.receita_extra || 0));
+  },
+});
+dash.calc('recs_total', {
+  inputs: ['recs'],
+  title: 'Potencial somado das recomendações',
+  description: 'Soma das vendas e do faturamento estimados de todas as recomendações, por mês.',
+  fn: (recs) => [{acoes: recs.length, vendas_extra: recs.reduce((s, r) => s + (r.vendas_extra || 0), 0), receita_extra: recs.reduce((s, r) => s + (r.receita_extra || 0), 0)}],
+});
+
+</script>
+<script>
+const brl = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'});
+const brlC = new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1});
+const intF = new Intl.NumberFormat('pt-BR');
+const intC = new Intl.NumberFormat('pt-BR', {notation: 'compact', maximumFractionDigits: 1});
+const decF = new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const pct0 = new Intl.NumberFormat('pt-BR', {style: 'percent', maximumFractionDigits: 0});
+const pct1 = new Intl.NumberFormat('pt-BR', {style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1});
+const pct2 = new Intl.NumberFormat('pt-BR', {style: 'percent', minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmt = (v, f) => {
+  if (v == null || Number.isNaN(v) || !Number.isFinite(Number(v))) return '—';
+  if (f === 'brl') return Math.abs(v) >= 100000 ? brlC.format(v) : brl.format(v);
+  if (f === 'int') return Math.abs(v) >= 1000000 ? intC.format(v) : intF.format(Math.round(v));
+  if (f === 'dec') return decF.format(v);
+  if (f === 'pct1') return pct1.format(v);
+  if (f === 'pct2') return pct2.format(v);
+  return String(v);
+};
+window.tpFmt = fmt;
+const failBox = (el) => {
+  const box = document.createElement('div'); box.className = 'tp-fail';
+  const t = document.createElement('span'); t.textContent = 'Falha ao carregar';
+  box.append(document.createElement('i'), t); el.replaceChildren(box);
+};
+
+// ----- Período e conta -----
+const iso = d3.timeFormat('%Y-%m-%d');
+const br = d3.timeFormat('%d/%m/%Y');
+const day = (d, n) => d3.timeDay.offset(d3.timeDay.floor(d), n);
+function ranges(p) {
+  const today = d3.timeDay.floor(new Date());
+  const yest = day(today, -1);
+  const n = {yesterday: 1, d7: 7, d14: 14, d30: 30, d90: 90}[p];
+  if (n) {
+    const until = yest, since = day(until, -(n - 1));
+    const pu = day(since, -1), ps = day(pu, -(n - 1));
+    return [since, until, ps, pu];
+  }
+  if (p === 'this_month') {
+    const since = d3.timeMonth.floor(today), until = today;
+    const ps = d3.timeMonth.offset(since, -1);
+    const lastPrev = day(since, -1);
+    const pu = new Date(Math.min(+day(ps, today.getDate() - 1), +lastPrev));
+    return [since, until, ps, pu];
+  }
+  const since = d3.timeMonth.offset(d3.timeMonth.floor(today), -1), until = day(d3.timeMonth.floor(today), -1);
+  const ps = d3.timeMonth.offset(since, -1), pu = day(since, -1);
+  return [since, until, ps, pu];
+}
+function applyPeriod(p) {
+  const [s, u, ps, pu] = ranges(p);
+  const tr = (a, b) => JSON.stringify({since: iso(a), until: iso(b)});
+  dash.setParams({periodo: p, since: iso(s), until: iso(u), prev_since: iso(ps), prev_until: iso(pu), tr: tr(s, u), tr_ant: tr(ps, pu)});
+}
+applyPeriod(dash.params().periodo || 'd30');
+document.querySelectorAll('.tp-pill').forEach((b) => b.addEventListener('click', () => applyPeriod(b.dataset.p)));
+document.querySelectorAll('.tp-conta').forEach((s) => s.addEventListener('change', () => dash.setParams({conta: s.value})));
+const parseIso = d3.timeParse('%Y-%m-%d');
+const rangeTxt = (a, b) => {
+  const x = parseIso(a || ''), y = parseIso(b || '');
+  if (!x || !y) return '—';
+  return +x === +y ? br(x) : br(x) + ' – ' + br(y);
+};
+
+dash.onData(() => {
+  const pr = dash.params();
+  document.querySelectorAll('.tp-pill').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.p === (pr.periodo || 'd30'))));
+  document.querySelectorAll('.tp-conta').forEach((s) => { s.value = pr.conta || '268664780005258'; });
+  document.querySelectorAll('.tp').forEach((r) => { r.style.setProperty('--tp-a0', dash.colors[0]); r.style.setProperty('--tp-a1', dash.colors[1]); });
+  [0, 1, 2, 3].forEach((i) => document.querySelectorAll('.tp-sw' + i).forEach((s) => { s.style.background = dash.colors[i]; }));
+});
+
+dash.draw('range', (el) => { const p = dash.params(); el.textContent = rangeTxt(p.since, p.until); });
+dash.draw('range-ant', (el) => { const p = dash.params(); el.textContent = rangeTxt(p.prev_since, p.prev_until); });
+
+dash.draw('txt', (el) => {
+  const d = dash.data(el.dataset.source);
+  const row = d.status === 'ok' ? d.data[0] : null;
+  el.textContent = row && row[el.dataset.field] != null ? String(row[el.dataset.field]) : '—';
+});
+dash.draw('kpi', (el) => {
+  const d = dash.data(el.dataset.source);
+  const row = d.status === 'ok' ? (d.data[0] || {}) : null;
+  el.textContent = row ? fmt(row[el.dataset.field], el.dataset.fmt) : '—';
+});
+dash.draw('delta', (el) => {
+  const d = dash.data('delta');
+  const v = d.status === 'ok' && d.data[0] ? d.data[0][el.dataset.field] : null;
+  el.classList.remove('ok', 'bad', 'flat');
+  if (v == null || !Number.isFinite(v)) { el.textContent = '—'; el.classList.add('flat'); return; }
+  const g = el.dataset.good;
+  const flat = Math.abs(v) < 0.005;
+  el.textContent = (flat ? '• ' : v > 0 ? '▲ ' : '▼ ') + pct1.format(Math.abs(v));
+  el.classList.add(flat || g === 'none' ? 'flat' : (v > 0) === (g === 'up') ? 'ok' : 'bad');
+});
+
+// ----- Sparklines -----
+dash.draw('spark', (el) => {
+  const d = dash.data('diario_calc');
+  el.replaceChildren();
+  if (d.status !== 'ok') return;
+  const k = el.dataset.k, color = dash.colors[+el.dataset.c || 0];
+  const rows = d.data.filter((r) => r[k] != null && Number.isFinite(r[k]));
+  if (rows.length < 2) return;
+  const W = Math.max(120, el.clientWidth || 200), H = 44;
+  const x = d3.scaleLinear([0, rows.length - 1], [0, W]);
+  const ext = d3.extent(rows, (r) => r[k]);
+  const y = d3.scaleLinear([Math.min(0, ext[0]), ext[1] || 1], [H - 2, 6]);
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', 'none');
+  const gid = 'tpg-' + k + '-' + Math.random().toString(36).slice(2, 7);
+  const g = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+  [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => g.append('stop').attr('offset', o).attr('style', `stop-color:${color};stop-opacity:${a}`));
+  svg.append('path').datum(rows).attr('fill', `url(#${gid})`).attr('d', d3.area().x((r, i) => x(i)).y0(H).y1((r) => y(r[k])));
+  svg.append('path').datum(rows).attr('fill', 'none').attr('stroke', color).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('vector-effect', 'non-scaling-stroke').attr('d', d3.line().x((r, i) => x(i)).y((r) => y(r[k])));
+});
+
+// ----- Funil -----
+dash.draw('fbar', (el) => {
+  const d = dash.data('totais');
+  el.replaceChildren();
+  if (d.status !== 'ok' || !d.data[0]) return;
+  const t = d.data[0], top = t.impressions || 0, v = t[el.dataset.k] || 0;
+  const w = top > 1 && v > 0 ? Math.max(2, Math.log(v) / Math.log(top) * 100) : 0;
+  const s = document.createElement('span');
+  s.style.width = w + '%';
+  s.style.background = `linear-gradient(90deg, ${dash.colors[0]}, ${dash.colors[1]})`;
+  el.append(s);
+});
+
+// ----- Diagnóstico -----
+const textos = {
+  freq: (a) => ['Público começando a saturar', `Frequência de ${decF.format(a.valor)} no período. Acima de ${decF.format(a.ref)}, o custo tende a subir: renove criativos ou amplie o público.`],
+  connect: (a) => ['Página perdendo visitantes', `Só ${pct0.format(a.valor)} dos cliques chegam a carregar a página (referência: ${pct0.format(a.ref)}). Vale checar a velocidade da página no celular.`],
+  cpa_up: (a) => ['Custo por venda subiu', `Alta de ${pct0.format(a.valor)} em relação ao período anterior.`],
+  cpa_down: (a) => ['Custo por venda caiu', `Queda de ${pct0.format(Math.abs(a.valor))} em relação ao período anterior.`],
+  roas_down: (a) => ['ROAS em queda', `Retorno ${pct0.format(Math.abs(a.valor))} menor que no período anterior.`],
+  roas_up: (a) => ['ROAS melhorou', `Retorno ${pct0.format(a.valor)} maior que no período anterior.`],
+  roas_baixo: (a) => ['Retorno abaixo do investido', `ROAS de ${decF.format(a.valor)}: o faturamento atribuído não cobre o investimento.`],
+  checkout: (a) => ['Checkout com abandono alto', `Só ${pct0.format(a.valor)} de quem inicia o checkout conclui a compra (referência: ${pct0.format(a.ref)}). Revise meios de pagamento e a página de checkout.`],
+  escalar: (a) => ['Criativo para escalar', `${a.nome} tem o melhor ROAS entre os que já venderam (${decF.format(a.valor)}).`],
+  pausar: (a) => ['Criativo sem vendas', `${a.nome} já gastou ${brl.format(a.valor)} sem vender. Considere pausar.`],
+  caro: (a) => ['Criativo caro', `${a.nome} vende a ${brl.format(a.valor)} por venda, bem acima da média da conta.`],
+  tudo_ok: () => ['Nada fora do normal', 'Nenhuma das regras de alerta disparou neste período.'],
+};
+dash.draw('alertas', (ul) => {
+  const d = dash.data('alertas');
+  ul.replaceChildren();
+  if (d.status === 'error') { failBox(ul); return; }
+  if (d.status !== 'ok') return;
+  d.data.forEach((a) => {
+    const t = (textos[a.codigo] || (() => [a.codigo, '']))(a);
+    const li = document.createElement('li'); li.className = 'tp-alert ' + a.nivel;
+    const box = document.createElement('div');
+    const s = document.createElement('strong'); s.textContent = t[0];
+    const p = document.createElement('span'); p.textContent = t[1];
+    box.append(s, p); li.append(document.createElement('i'), box); ul.append(li);
+  });
+});
+
+// ----- Tabelas -----
+const corStatus = (s) => /Ativ/.test(s || '') ? 'var(--color-ok)' : /problema|Reprov/.test(s || '') ? 'var(--color-bad)' : 'var(--color-fg-muted)';
+window.tpSort = window.tpSort || {key: 'amount_spent', dir: -1};
+document.querySelectorAll('.tp-ads th.tp-sort').forEach((th) => th.addEventListener('click', () => {
+  const k = th.dataset.sort;
+  window.tpSort = {key: k, dir: window.tpSort.key === k ? -window.tpSort.dir : (k === 'cpa' || k === 'name' ? 1 : -1)};
+  document.querySelectorAll('.tp-ads th.tp-sort').forEach((h) => {
+    if (h.dataset.sort === k) h.setAttribute('aria-sort', window.tpSort.dir > 0 ? 'ascending' : 'descending'); else h.removeAttribute('aria-sort');
+  });
+  dash.draw('ad-rows');
+}));
+dash.draw('ad-rows', (tb) => {
+  const c = dash.data('anuncios'), k = dash.data('ad_calc');
+  tb.replaceChildren();
+  if (c.status !== 'ok') return;
+  const extra = new Map((k.status === 'ok' ? k.data : []).map((r) => [r.id, r]));
+  const rows = c.data.map((r) => ({...r, ...(extra.get(r.id) || {}), name: r.name}));
+  const {key, dir} = window.tpSort;
+  rows.sort((a, b) => {
+    const x = a[key], y = b[key];
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return typeof x === 'string' ? dir * x.localeCompare(y) : dir * (x - y);
+  });
+  const maxR = d3.max(rows, (r) => r.roas) || 1;
+  rows.forEach((r) => {
+    const tr = document.createElement('tr'); tr.dataset.key = r.id;
+    const td0 = document.createElement('td');
+    const dot = document.createElement('span'); dot.className = 'tp-dot'; dot.style.background = corStatus(r.situacao);
+    const nm = document.createElement('span'); nm.textContent = r.name;
+    const sub = document.createElement('span'); sub.className = 'tp-sub'; sub.textContent = r.situacao || '';
+    td0.append(dot, nm, sub); tr.append(td0);
+    const tdS = document.createElement('td');
+    if (r.sinal) { const b = document.createElement('span'); b.className = 'tp-badge ' + ({Escalar: 'ok', Pausar: 'bad', Atenção: 'warn'})[r.sinal]; b.textContent = r.sinal; tdS.append(b); } else tdS.textContent = '—';
+    tr.append(tdS);
+    [fmt(r.amount_spent, 'brl'), fmt(r.omni_purchase || 0, 'int'), fmt(r.cpa, 'brl')].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.append(td); });
+    const tdR = document.createElement('td'); const wrap = document.createElement('span'); wrap.className = 'tp-roas';
+    const bar = document.createElement('span'); bar.style.width = (r.roas ? Math.max(2, r.roas / maxR * 48) : 0) + 'px'; bar.style.background = dash.colors[1];
+    const tx = document.createElement('span'); tx.textContent = fmt(r.roas, 'dec');
+    wrap.append(bar, tx); tdR.append(wrap); tr.append(tdR);
+    [fmt(r.ctr_link, 'pct2'), fmt(r.lp_ic, 'pct1'), fmt(r.vthru, 'pct1')].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.append(td); });
+    tb.append(tr);
+  });
+});
+dash.draw('camp-rows', (tb) => {
+  const c = dash.data('campanhas'), k = dash.data('camp_calc');
+  tb.replaceChildren();
+  if (c.status !== 'ok') return;
+  const extra = new Map((k.status === 'ok' ? k.data : []).map((r) => [r.id, r]));
+  c.data.forEach((r) => {
+    const x = extra.get(r.id) || {};
+    const tr = document.createElement('tr'); tr.dataset.key = r.id;
+    const td0 = document.createElement('td'); td0.textContent = r.name; tr.append(td0);
+    const td1 = document.createElement('td'); const dot = document.createElement('span'); dot.className = 'tp-dot'; dot.style.background = corStatus(x.situacao);
+    const st = document.createElement('span'); st.textContent = x.situacao ?? '—'; td1.append(dot, st); tr.append(td1);
+    [fmt(r.amount_spent, 'brl'), fmt(r.omni_purchase || 0, 'int'), fmt(r.omni_purchase_values || 0, 'brl'), fmt(x.cpa, 'brl'), fmt(x.roas, 'dec')].forEach((v) => {
+      const td = document.createElement('td'); td.textContent = v; tr.append(td);
+    });
+    tb.append(tr);
+  });
+});
+
+dash.draw('brk', (tb) => {
+  const d = dash.data(tb.dataset.src);
+  tb.replaceChildren();
+  if (d.status !== 'ok') return;
+  const max = d3.max(d.data, (r) => r.share) || 1;
+  d.data.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const g = document.createElement('td'); g.textContent = r.grupo; tr.append(g);
+    const s = document.createElement('td'); const w = document.createElement('span'); w.className = 'tp-share';
+    const bar = document.createElement('span'); bar.style.width = Math.max(2, r.share / max * 56) + 'px'; bar.style.background = dash.colors[i === 0 ? 0 : 1];
+    const tx = document.createElement('span'); tx.textContent = pct0.format(r.share);
+    w.append(bar, tx); s.append(w); tr.append(s);
+    [fmt(r.vendas, 'int'), fmt(r.cpa, 'brl'), fmt(r.roas, 'dec')].forEach((v) => { const td = document.createElement('td'); td.textContent = v; tr.append(td); });
+    tb.append(tr);
+  });
+});
+dash.draw('conj-rows', (tb) => {
+  const c = dash.data('conjuntos'), k = dash.data('conj_calc');
+  tb.replaceChildren();
+  if (c.status !== 'ok') return;
+  const extra = new Map((k.status === 'ok' ? k.data : []).map((r) => [r.id, r]));
+  c.data.forEach((r) => {
+    const x = extra.get(r.id) || {};
+    const tr = document.createElement('tr'); tr.dataset.key = r.id;
+    const td0 = document.createElement('td');
+    const dot = document.createElement('span'); dot.className = 'tp-dot'; dot.style.background = corStatus(x.situacao);
+    const nm = document.createElement('span'); nm.textContent = r.name;
+    const sub = document.createElement('span'); sub.className = 'tp-sub'; sub.textContent = x.situacao || '';
+    td0.append(dot, nm, sub); tr.append(td0);
+    [r.daily_budget ? fmt(r.daily_budget, 'brl') : '—', fmt(r.amount_spent, 'brl'), fmt(r.omni_purchase || 0, 'int'), fmt(x.cpa, 'brl'), fmt(x.roas, 'dec'), fmt(x.lp_ic, 'pct1'), fmt(r.frequency, 'dec')].forEach((v) => {
+      const td = document.createElement('td'); td.textContent = v; tr.append(td);
+    });
+    tb.append(tr);
+  });
+});
+dash.draw('pace', (el) => {
+  const d = dash.data('ritmo');
+  el.replaceChildren();
+  if (d.status !== 'ok' || !d.data[0]) return;
+  const r = d.data[0];
+  const s = document.createElement('span');
+  s.style.width = Math.min(100, (r.pct || 0) * 100) + '%';
+  s.style.background = `linear-gradient(90deg, ${dash.colors[0]}, ${dash.colors[1]})`;
+  const m = document.createElement('span');
+  m.style.cssText = `left:${Math.min(100, r.dia / r.dias_mes * 100)}%;width:2px;background:var(--color-fg);opacity:.5;border-radius:0`;
+  el.append(s, m);
+});
+
+// ----- Abas -----
+const showTab = (t) => {
+  document.querySelectorAll('.tp-tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.querySelectorAll('.tp-panel').forEach((s) => { s.hidden = s.dataset.panel !== t; });
+};
+document.querySelectorAll('.tp-tab').forEach((b) => b.addEventListener('click', () => { showTab(b.dataset.tab); dash.setLink(b.dataset.tab === 'recs' ? 'recomendacoes' : 'geral'); }));
+showTab(location.hash === '#recomendacoes' ? 'recs' : 'geral');
+
+const n0 = (v) => intF.format(Math.round(v));
+const recTxt = {
+  escalar: (r) => ({t: `Escalar o criativo vencedor: ${r.nome}`, tag: 'Escala',
+    p: `Ele vende a ${brl.format(r.cpa_item)} por venda (média da conta: ${brl.format(r.cpa_conta)}) com ROAS de ${decF.format(r.roas_item)}. É onde cada real rende mais hoje.`,
+    s: [`Aumente o orçamento do conjunto ${r.conjunto || 'desse anúncio'} em 20% a 30% a cada 2–3 dias, sem mexer no resto.`, 'Se o custo por venda subir mais de 30%, volte ao orçamento anterior.', 'Opcional: duplique o conjunto numa campanha nova só para escala, com orçamento maior, mantendo o original rodando.']}),
+  realocar_ads: (r) => ({t: 'Tirar verba dos criativos que vendem caro', tag: 'Otimização',
+    p: `${r.nome} gastaram ${brl.format(r.gasto_item)} no mês com custo por venda bem acima da média. Essa mesma verba, no custo médio da conta, renderia mais vendas.`,
+    s: ['Pause os anúncios marcados como Pausar ou Atenção na aba Visão geral.', 'Passe o orçamento desses conjuntos para o criativo vencedor ou para testes novos.', 'Espere ao menos 3 dias e cerca de 1,5× o custo por venda de gasto antes de julgar um criativo novo.']}),
+  posicao: (r) => ({t: `Cortar posicionamentos caros: ${r.nome}`, tag: 'Otimização',
+    p: `Esses posicionamentos gastaram ${brl.format(r.gasto_item)} no mês e vendem muito acima do custo médio da conta.`,
+    s: ['No conjunto, troque para posicionamentos manuais e desmarque os listados.', 'Mantenha Instagram Feed, Reels e Stories, que concentram as vendas.', 'Compare o custo por venda da semana seguinte com o atual.']}),
+  idade: (r) => ({t: `Testar menos verba na faixa ${r.nome}`, tag: 'Teste',
+    p: `Essa faixa vende a ${brl.format(r.cpa_item)} por venda, acima da média de ${brl.format(r.cpa_conta)}, e leva ${pct0.format(r.share)} do investimento.`,
+    s: ['Em campanhas Advantage+, não exclua: crie um conjunto de teste com a faixa de idade que mais vende e compare.', 'Em conjuntos manuais, reduza a faixa ou ajuste a idade mínima.', 'Rode o teste por 7 dias antes de decidir.']}),
+  dispositivo: (r) => ({t: `Investigar o resultado em ${r.nome}`, tag: 'Página',
+    p: `Em ${r.nome} o custo por venda é ${brl.format(r.cpa_item)}, contra ${brl.format(r.cpa_conta)} na média. Parte disso pode ser venda que a Meta não consegue rastrear no iOS, mas também pode ser a página ou o checkout funcionando pior nesse aparelho.`,
+    s: ['Abra a página de vendas e o checkout num iPhone e faça uma compra de teste.', 'Confira na plataforma de vendas quantas vendas vieram de iOS no período.', 'Se a página estiver lenta ou com erro, corrija antes de mexer na campanha.']}),
+  remarketing: (r) => ({t: 'Criar campanha de remarketing para quem abandonou o checkout', tag: 'Nova campanha',
+    p: `Cerca de ${n0(r.base)} pessoas por mês iniciam o checkout e não compram. Recuperar 15% delas já dá o ganho estimado.`,
+    s: ['Crie um público personalizado: iniciaram checkout nos últimos 7 dias, excluindo compradores dos últimos 30 dias.', 'Monte uma campanha de vendas com orçamento baixo (R$ 15–20/dia) e criativos de urgência, prova social ou bônus.', 'Ative também a recuperação de carrinho da plataforma de vendas (e-mail e WhatsApp).']}),
+  novos_criativos: (r) => ({t: 'Produzir novos criativos a partir do vencedor', tag: 'Criativo',
+    p: `A frequência está em ${decF.format(r.freq)}: o público já viu os anúncios várias vezes, e isso encarece cada venda. ${r.nome ? 'O melhor criativo hoje é ' + r.nome + '.' : ''}`,
+    s: ['Crie 3 a 5 variações do vencedor mudando só o gancho dos 3 primeiros segundos.', 'Teste também um formato diferente (depoimento, bastidores, antes e depois).', 'Suba as variações num conjunto de teste e mantenha as que venderem abaixo da média.']}),
+  velocidade: (r) => ({t: 'Acelerar a página de vendas', tag: 'Página',
+    p: `Só ${pct0.format(r.taxa)} dos cliques chegam a carregar a página. Subir para 80% traria o ganho estimado sem gastar um real a mais em anúncio.`,
+    s: ['Teste a página no PageSpeed Insights, no modo celular.', 'Comprima imagens, remova scripts e plugins sem uso e use cache ou CDN.', 'Evite vídeo com carregamento automático acima da dobra.']}),
+  oferta_lp: (r) => ({t: 'Melhorar a conversão da página para o checkout', tag: 'Página',
+    p: `${pct1.format(r.taxa)} de quem vê a página clica para comprar. Ganhar 2 pontos percentuais já dá o ganho estimado.`,
+    s: ['Deixe o preço e o botão de compra visíveis já na primeira tela do celular.', 'Repita a promessa do anúncio no título da página, para manter a coerência.', 'Teste uma versão mais curta da página contra a atual.']}),
+  ticket: (r) => ({t: 'Aumentar o ticket médio com order bump e upsell', tag: 'Oferta',
+    p: `O ticket médio está em ${brl.format(r.ticket)}. Um order bump ou upsell que aumente 10% o valor por venda traria o ganho estimado com o mesmo gasto em anúncio.`,
+    s: ['Adicione no checkout um order bump complementar (ex.: material extra, mapa mental, simulado).', 'Ofereça um upsell logo após a compra com um produto de valor maior.', 'Acompanhe o ticket médio neste painel para ver o efeito.']}),
+  lookalike: (r) => ({t: 'Abrir uma campanha de escala com público semelhante aos compradores', tag: 'Nova campanha',
+    p: `Com cerca de ${n0(r.base)} vendas por mês, já existe base para a Meta encontrar pessoas parecidas com seus compradores.`,
+    s: ['Crie um público personalizado de compradores (pixel: Purchase, 180 dias) ou suba a lista da plataforma de vendas.', 'Gere um público semelhante de 1% a 3% no Brasil.', 'Use os 2 melhores criativos numa campanha nova e compare com a campanha atual por 7 dias.']}),
+};
+dash.draw('recs', (ol) => {
+  const d = dash.data('recs');
+  ol.replaceChildren();
+  if (d.status === 'error') { failBox(ol); return; }
+  if (d.status !== 'ok') return;
+  d.data.forEach((r, i) => {
+    const t = (recTxt[r.codigo] || (() => null))(r);
+    if (!t) return;
+    const li = document.createElement('li'); li.className = 'tp-rec';
+    const num = document.createElement('div'); num.className = 'tp-rec-n'; num.textContent = String(i + 1);
+    const b = document.createElement('div'); b.className = 'tp-rec-b';
+    const top = document.createElement('div'); top.className = 'tp-rec-top';
+    const h = document.createElement('h3'); h.textContent = t.t;
+    const tag = document.createElement('span'); tag.className = 'tp-tag'; tag.textContent = t.tag;
+    top.append(h, tag);
+    const imp = document.createElement('div'); imp.className = 'tp-impact';
+    if (r.vendas_extra > 0.5) { const s = document.createElement('span'); s.textContent = '+' + n0(r.vendas_extra) + ' vendas/mês'; imp.append(s); }
+    if (r.receita_extra > 1) { const s = document.createElement('span'); s.textContent = '+' + brl.format(r.receita_extra) + '/mês'; imp.append(s); }
+    if (r.invest_extra > 1) { const s = document.createElement('span'); s.className = 'n'; s.textContent = 'exige ~' + brl.format(r.invest_extra) + '/mês a mais em anúncio'; imp.append(s); }
+    if (!imp.childNodes.length) { const s = document.createElement('span'); s.className = 'n'; s.textContent = 'ganho não estimável com estes dados'; imp.append(s); }
+    const pp = document.createElement('p'); pp.textContent = t.p;
+    const det = document.createElement('details'); if (i < 3) det.open = true;
+    const sum = document.createElement('summary'); sum.textContent = 'Como fazer';
+    const steps = document.createElement('ol'); t.s.forEach((x) => { const li2 = document.createElement('li'); li2.textContent = x; steps.append(li2); });
+    det.append(sum, steps);
+    b.append(top, imp, pp, det);
+    li.append(num, b); ol.append(li);
+  });
+});
+
+// ----- Gráficos -----
+const dayF = d3.timeFormat('%d/%m');
+function frame(el) {
+  const d = dash.data('diario_calc');
+  el.replaceChildren();
+  if (d.status === 'error') { el.classList.remove('dash-skeleton'); failBox(el); return null; }
+  if (d.status !== 'ok') { el.classList.add('dash-skeleton'); return null; }
+  el.classList.remove('dash-skeleton');
+  const rows = d.data.map((r) => ({...r, date: parseIso(r.dia)})).filter((r) => r.date);
+  if (!rows.length) return null;
+  return rows;
+}
+function axisLeft(svg, y, fmtY, x0) {
+  const g = svg.append('g').attr('class', 'tp-axis');
+  g.call(d3.axisLeft(y).ticks(4).tickSize(0).tickFormat(fmtY)).attr('font-size', null).attr('font-family', null);
+  let w = 0; g.selectAll('text').each(function () { w = Math.max(w, this.getComputedTextLength()); });
+  g.select('.domain').remove();
+  return {g, w: Math.ceil(w) + 10};
+}
+function axisRight(svg, y, fmtY) {
+  const g = svg.append('g').attr('class', 'tp-axis');
+  g.call(d3.axisRight(y).ticks(4).tickSize(0).tickFormat(fmtY)).attr('font-size', null).attr('font-family', null);
+  let w = 0; g.selectAll('text').each(function () { w = Math.max(w, this.getComputedTextLength()); });
+  g.select('.domain').remove();
+  return {g, w: Math.ceil(w) + 10};
+}
+function drawChart(el, cfg) {
+  const rows = frame(el); if (!rows) return;
+  const W = Math.max(280, el.clientWidth || 600), H = 260, B = 26, T = 10;
+  const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+  const onLeft = [...cfg.left, ...(cfg.lines || []).filter((s) => s.axis !== 'right')];
+  const maxL = d3.max(rows, (r) => d3.max(onLeft, (s) => r[s.key] || 0)) || 1;
+  const yL = d3.scaleLinear([0, maxL * 1.1], [H - B, T]).nice();
+  const L = axisLeft(svg, yL, cfg.fmtL);
+  let yR = null, R = {w: 6};
+  if (cfg.right) {
+    const maxR = d3.max(rows, (r) => r[cfg.right.key] || 0) || 1;
+    yR = d3.scaleLinear([0, maxR * 1.15], [H - B, T]).nice();
+    R = axisRight(svg, yR, cfg.fmtR);
+  }
+  L.g.attr('transform', `translate(${L.w - 4},0)`);
+  if (cfg.right) R.g.attr('transform', `translate(${W - R.w + 4},0)`);
+  const x = d3.scaleBand(rows.map((r) => r.dia), [L.w, W - R.w]).padding(0.28);
+  svg.insert('g', ':first-child').selectAll('line').data(yL.ticks(4)).join('line')
+    .attr('x1', L.w).attr('x2', W - R.w).attr('y1', (t) => yL(t)).attr('y2', (t) => yL(t)).attr('stroke', 'var(--cds-chart-grid)');
+  const every = Math.max(1, Math.ceil(rows.length / Math.max(2, Math.floor((W - L.w - R.w) / 52))));
+  const xG = svg.append('g').attr('class', 'tp-axis').attr('transform', `translate(0,${H - B})`)
+    .call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickValues(rows.filter((_, i) => i % every === 0).map((r) => r.dia)).tickFormat((s) => dayF(parseIso(s))));
+  xG.attr('font-size', null).attr('font-family', null); xG.select('.domain').attr('stroke', 'var(--cds-chart-axis)');
+  const bw = Math.min(32, x.bandwidth());
+  const off = (x.bandwidth() - bw) / 2;
+  cfg.left.forEach((s) => {
+    svg.append('g').selectAll('rect').data(rows).join('rect')
+      .attr('x', (r) => x(r.dia) + off).attr('width', bw)
+      .attr('y', (r) => yL(r[s.key] || 0)).attr('height', (r) => yL(0) - yL(r[s.key] || 0))
+      .attr('rx', Math.min(3, bw / 2)).attr('fill', dash.colors[s.color]).attr('opacity', .85);
+  });
+  const lines = (cfg.lines || []).map((s) => ({...s, y: s.axis === 'right' ? yR : yL}));
+  lines.forEach((s) => {
+    const pts = rows.filter((r) => r[s.key] != null && Number.isFinite(r[s.key]));
+    const gid = 'tpa-' + s.key + Math.random().toString(36).slice(2, 7);
+    const gr = svg.append('defs').append('linearGradient').attr('id', gid).attr('x1', 0).attr('x2', 0).attr('y1', 0).attr('y2', 1);
+    [[0, .26], [.25, .16], [.5, .08], [.75, .03], [1, 0]].forEach(([o, a]) => gr.append('stop').attr('offset', o).attr('style', `stop-color:${dash.colors[s.color]};stop-opacity:${a}`));
+    const cx = (r) => x(r.dia) + x.bandwidth() / 2;
+    if (s.area) svg.append('path').datum(pts).attr('fill', `url(#${gid})`).attr('d', d3.area().x(cx).y0(H - B).y1((r) => s.y(r[s.key])));
+    svg.append('path').datum(pts).attr('fill', 'none').attr('stroke', dash.colors[s.color]).attr('stroke-width', 2)
+      .attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round').attr('d', d3.line().x(cx).y((r) => s.y(r[s.key])));
+  });
+  const tip = document.createElement('div'); tip.className = 'tp-tip'; tip.hidden = true; el.append(tip);
+  const hl = svg.append('rect').attr('fill', 'var(--cds-chart-muted)').attr('opacity', 0).attr('y', T).attr('height', H - B - T).attr('rx', 3);
+  const series = [...cfg.left, ...(cfg.lines || [])];
+  svg.append('g').selectAll('rect').data(rows).join('rect')
+    .attr('x', (r) => x(r.dia) - x.step() * x.paddingInner() / 2).attr('width', x.step()).attr('y', 0).attr('height', H).attr('fill', 'transparent')
+    .on('mousemove', (ev, r) => {
+      hl.attr('x', x(r.dia) - 3).attr('width', x.bandwidth() + 6).attr('opacity', .18);
+      tip.replaceChildren();
+      const dd = document.createElement('div'); dd.className = 'd'; dd.textContent = br(r.date); tip.append(dd);
+      series.forEach((s) => {
+        const line = document.createElement('div');
+        const sw = document.createElement('i'); sw.className = 'tp-sw'; sw.style.background = dash.colors[s.color];
+        const t = document.createElement('span'); t.textContent = `${s.label}: ${s.fmt(r[s.key])}`;
+        line.append(sw, t); tip.append(line);
+      });
+      tip.hidden = false;
+      const [mx, my] = d3.pointer(ev, el);
+      tip.style.left = Math.max(0, Math.min(el.clientWidth - tip.offsetWidth, mx + 12)) + 'px';
+      tip.style.top = Math.max(0, my - 60) + 'px';
+    })
+    .on('mouseleave', () => { tip.hidden = true; hl.attr('opacity', 0); });
+}
+dash.draw('chart-money', (el) => drawChart(el, {
+  left: [{key: 'investimento', color: 0, label: 'Investimento', fmt: (v) => fmt(v || 0, 'brl')}],
+  lines: [{key: 'faturamento', color: 1, label: 'Faturamento', area: true, fmt: (v) => fmt(v || 0, 'brl')}],
+  fmtL: (v) => brlC.format(v),
+}));
+dash.draw('chart-cpa', (el) => drawChart(el, {
+  left: [{key: 'vendas', color: 2, label: 'Vendas', fmt: (v) => intF.format(v || 0)}],
+  lines: [{key: 'cpa_mm7', color: 3, axis: 'right', label: 'Custo por venda (7 dias)', fmt: (v) => fmt(v, 'brl')}],
+  right: {key: 'cpa_mm7'},
+  fmtL: (v) => intF.format(v), fmtR: (v) => brlC.format(v),
+}));
+</script>
+
+</div>
+<script>
+(function () {
+  const box = document.getElementById('dash-login');
+  const form = document.getElementById('dash-login-form');
+  const err = document.getElementById('dash-login-err');
+  window.dashLogin = () => { box.hidden = false; form.senha.focus(); };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault(); err.textContent = '';
+    const r = await fetch('/api/login', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({senha: form.senha.value})});
+    if (r.ok) { box.hidden = true; form.reset(); dash.resetCache(); }
+    else { const j = await r.json().catch(() => ({})); err.textContent = j.error || 'Não foi possível entrar'; }
+  });
+})();
+</script>
+</body>
+</html>

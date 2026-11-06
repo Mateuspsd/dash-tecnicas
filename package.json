@@ -1,0 +1,7 @@
+{
+  "name": "dash-tecnicas",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Painel de desempenho Meta Ads — Técnicas para Concursos",
+  "engines": { "node": ">=18" }
+}
